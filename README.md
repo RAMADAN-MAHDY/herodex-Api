@@ -1,4 +1,6 @@
-# النظام الخلفي لمتجر مستحضرات التجميل (Cosmetics Store Backend)
+<div dir="rtl">
+
+# Herodex API - النظام الخلفي لمتجر مستحضرات التجميل (Cosmetics Store Backend)
 
 واجهة برمجة تطبيقات (REST API) جاهزة للإنتاج لمتجر مستحضرات تجميل صغير، مبنية باستخدام Node.js و Express و MongoDB.
 
@@ -227,5 +229,5 @@ const fetchProducts = async (page = 1, limit = 10, categoryId = '') => {
   ]
 }
 ```
-#   h e r o d e x - A p i  
- 
+
+</div>
