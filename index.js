@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import { notFound, errorHandler } from './src/middlewares/errorMiddleware.js';
+import cors from 'cors';
 
 import authRoutes from './src/routes/authRoutes.js';
 import categoryRoutes from './src/routes/categoryRoutes.js';
@@ -13,9 +14,17 @@ import cartRoutes from './src/routes/cartRoutes.js';
 
 dotenv.config();
 
+
 const app = express();
 
-app.use(cors());
+const corsOptions = {
+  origin: ["http://localhost:3000"], // Allow all origins
+  // credentials: true, // Allow cookies and authorization headers
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // Allow all HTTP methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow all headers
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Routes
