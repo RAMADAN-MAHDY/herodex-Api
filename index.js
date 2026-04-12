@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import { notFound, errorHandler } from './src/middlewares/errorMiddleware.js';
-import cors from 'cors';
+
 
 import authRoutes from './src/routes/authRoutes.js';
 import categoryRoutes from './src/routes/categoryRoutes.js';
