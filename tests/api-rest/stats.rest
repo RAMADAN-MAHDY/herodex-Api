@@ -1,0 +1,17 @@
+@baseUrl = http://localhost:5000/api
+@contentType = application/json
+@adminToken = {{loginAdmin.response.body.data.token}}
+@userToken = {{loginUser.response.body.data.token}}
+
+### Prerequisites: Run auth.rest first to get tokens
+
+### 1. Get Dashboard Stats (Positive Case - Admin)
+GET {{baseUrl}}/stats
+Authorization: Bearer {{adminToken}}
+
+### 2. Get Stats (Negative Case - Unauthorized)
+GET {{baseUrl}}/stats
+
+### 3. Get Stats (Negative Case - Forbidden - Normal User)
+GET {{baseUrl}}/stats
+Authorization: Bearer {{userToken}}

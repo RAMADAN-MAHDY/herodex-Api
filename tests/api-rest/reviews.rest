@@ -1,0 +1,61 @@
+@baseUrl = http://localhost:5000/api
+@contentType = application/json
+@adminToken = {{loginAdmin.response.body.data.token}}
+@userToken = {{loginUser.response.body.data.token}}
+
+### Prerequisites: Run auth.rest first to get tokens
+
+### 1. Create a Review (Positive Case - Admin)
+# @name createReview
+POST {{baseUrl}}/reviews
+Authorization: Bearer {{adminToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="review.jpg"
+Content-Type: image/jpeg
+
+< ./review.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Capture created review ID
+@reviewId = {{createReview.response.body.data._id}}
+
+### 2. Get All Reviews (Positive Case - Public)
+GET {{baseUrl}}/reviews
+
+### 3. Create Review (Negative Case - Unauthorized)
+POST {{baseUrl}}/reviews
+Content-Type: application/json
+
+{
+  "image": "image-data"
+}
+
+### 4. Create Review (Negative Case - Forbidden - Normal User)
+POST {{baseUrl}}/reviews
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "image": "image-data"
+}
+
+### 5. Create Review without Image (Negative Case - 400)
+POST {{baseUrl}}/reviews
+Authorization: Bearer {{adminToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="name"
+
+No image
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 6. Delete Review (Positive Case - Admin)
+DELETE {{baseUrl}}/reviews/{{reviewId}}
+Authorization: Bearer {{adminToken}}
+
+### 7. Delete Review (Negative Case - Not Found - 404)
+DELETE {{baseUrl}}/reviews/507f1f77bcf86cd799439011
+Authorization: Bearer {{adminToken}}

@@ -1,0 +1,81 @@
+@baseUrl = http://localhost:5000/api
+@contentType = application/json
+
+### 1. Register a new Admin (Positive Case)
+# @name registerAdmin
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "name": "Admin User",
+  "email": "admin@example.com",
+  "password": "password123",
+  "role": "admin"
+}
+
+### 2. Register a new User (Positive Case)
+# @name registerUser
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "name": "Normal User",
+  "email": "user@example.com",
+  "password": "password123",
+  "role": "user"
+}
+
+### 3. Login as Admin (Positive Case)
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@example.com",
+  "password": "password123"
+}
+
+### Capture token from loginAdmin response
+@adminToken = {{loginAdmin.response.body.data.token}}
+
+### 4. Login as User (Positive Case)
+# @name loginUser
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+
+### Capture token from loginUser response
+@userToken = {{loginUser.response.body.data.token}}
+
+### 5. Register with existing email (Negative Case - 400)
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "name": "Duplicate User",
+  "email": "admin@example.com",
+  "password": "password123"
+}
+
+### 6. Register with invalid data (Negative Case - 400)
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "name": "Jo",
+  "email": "invalid-email",
+  "password": "123"
+}
+
+### 7. Login with wrong password (Negative Case - 401)
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@example.com",
+  "password": "wrongpassword"
+}

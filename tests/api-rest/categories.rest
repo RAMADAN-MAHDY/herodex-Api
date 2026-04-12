@@ -1,0 +1,83 @@
+@baseUrl = http://localhost:5000/api
+@contentType = application/json
+@adminToken = {{loginAdmin.response.body.data.token}}
+@userToken = {{loginUser.response.body.data.token}}
+
+### Prerequisites: Run auth.rest first to get tokens
+
+### 1. Create a Category (Positive Case - Admin)
+# @name createCategory
+POST {{baseUrl}}/categories
+Authorization: Bearer {{adminToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="name"
+
+Skincare
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+All kinds of skincare products
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="skincare.jpg"
+Content-Type: image/jpeg
+
+< ./skincare.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Capture created category ID
+@categoryId = {{createCategory.response.body.data._id}}
+
+### 2. Get All Categories (Positive Case - Public)
+GET {{baseUrl}}/categories
+
+### 3. Update Category (Positive Case - Admin)
+PUT {{baseUrl}}/categories/{{categoryId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="name"
+
+Skincare Updated
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Updated description for skincare
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 4. Create Category (Negative Case - Unauthorized)
+POST {{baseUrl}}/categories
+Content-Type: application/json
+
+{
+  "name": "Unauthorized Category"
+}
+
+### 5. Create Category (Negative Case - Forbidden - Normal User)
+POST {{baseUrl}}/categories
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "name": "Forbidden Category"
+}
+
+### 6. Create Category with Invalid Data (Negative Case - 400)
+POST {{baseUrl}}/categories
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "S",
+  "description": "Too short name"
+}
+
+### 7. Delete Category (Positive Case - Admin)
+DELETE {{baseUrl}}/categories/{{categoryId}}
+Authorization: Bearer {{adminToken}}
+
+### 8. Delete Category (Negative Case - Not Found - 404)
+DELETE {{baseUrl}}/categories/507f1f77bcf86cd799439011
+Authorization: Bearer {{adminToken}}

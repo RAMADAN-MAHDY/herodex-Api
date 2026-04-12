@@ -1,0 +1,49 @@
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import mongoose from 'mongoose';
+import { notFound, errorHandler } from './src/middlewares/errorMiddleware.js';
+
+import authRoutes from './src/routes/authRoutes.js';
+import categoryRoutes from './src/routes/categoryRoutes.js';
+import productRoutes from './src/routes/productRoutes.js';
+import reviewRoutes from './src/routes/reviewRoutes.js';
+import statsRoutes from './src/routes/statsRoutes.js';
+import cartRoutes from './src/routes/cartRoutes.js';
+
+dotenv.config();
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/cart', cartRoutes);
+
+// Root route
+app.get('/', (req, res) => {
+  res.send('API is running...');
+});
+
+// Middleware
+app.use(notFound);
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGO_URI;
+
+mongoose.connect(MONGO_URI)
+  .then(() => {
+    console.log('MongoDB Connected');
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  })
+  .catch((err) => {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  });

@@ -1,0 +1,97 @@
+@baseUrl = http://localhost:5000/api
+@contentType = application/json
+@adminToken = {{loginAdmin.response.body.data.token}}
+@userToken = {{loginUser.response.body.data.token}}
+@categoryId = {{createCategory.response.body.data._id}}
+
+### Prerequisites: Run auth.rest and categories.rest first to get tokens and category ID
+
+### 1. Create a Product (Positive Case - Admin)
+# @name createProduct
+POST {{baseUrl}}/products
+Authorization: Bearer {{adminToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="name"
+
+Face Cream
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="price"
+
+25.99
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+A high-quality face cream for daily use
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="category"
+
+{{categoryId}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="facecream.jpg"
+Content-Type: image/jpeg
+
+< ./facecream.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Capture created product ID
+@productId = {{createProduct.response.body.data._id}}
+
+### 2. Get All Products (Positive Case - Public)
+GET {{baseUrl}}/products?pageNumber=1&limit=10
+
+### 3. Get Products by Category (Positive Case - Public)
+GET {{baseUrl}}/products?category={{categoryId}}
+
+### 4. Update Product (Positive Case - Admin)
+PUT {{baseUrl}}/products/{{productId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="name"
+
+Face Cream Updated
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="price"
+
+29.99
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 5. Create Product (Negative Case - Unauthorized)
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "name": "Unauthorized Product"
+}
+
+### 6. Create Product (Negative Case - Forbidden - Normal User)
+POST {{baseUrl}}/products
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "name": "Forbidden Product"
+}
+
+### 7. Create Product with Invalid Data (Negative Case - 400)
+POST {{baseUrl}}/products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "F",
+  "price": -10,
+  "description": "Short",
+  "category": "invalid-id"
+}
+
+### 8. Delete Product (Positive Case - Admin)
+DELETE {{baseUrl}}/products/{{productId}}
+Authorization: Bearer {{adminToken}}
+
+### 9. Delete Product (Negative Case - Not Found - 404)
+DELETE {{baseUrl}}/products/507f1f77bcf86cd799439011
+Authorization: Bearer {{adminToken}}
