@@ -2,7 +2,7 @@
   "name": "backend",
   "version": "1.0.0",
   "main": "index.js",
-   "scripts": {
+  "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
@@ -17,6 +17,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.1",
     "express": "^5.2.1",
+    "helmet": "^8.1.0",
     "joi": "^18.1.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.4.1",

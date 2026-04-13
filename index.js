@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import helmet from 'helmet';
 import mongoose from 'mongoose';
 import { notFound, errorHandler } from './src/middlewares/errorMiddleware.js';
 
@@ -16,6 +17,35 @@ dotenv.config();
 
 
 const app = express();
+
+app.set('trust proxy', 1);
+
+// Security Middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      imgSrc: ["'self'", "data:", "https://i.ibb.co", "https://*.googleusercontent.com"],
+      connectSrc: ["'self'", "https://accounts.google.com", "https://oauth2.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+  xFrameOptions: { action: "deny" },
+  xContentTypeOptions: true,
+  xssFilter: true,
+  referrerPolicy: { policy: "no-referrer" },
+}));
 
 const corsOptions = {
   origin: "http://localhost:3000",
@@ -47,17 +77,19 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 
-mongoose.connect(MONGO_URI)
-  .then(() => {
-    console.log('MongoDB Connected');
-    // Only listen on the port if not running in Vercel/Production
-    if (process.env.NODE_ENV !== 'production') {
-      app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-    }
-  })
-  .catch((err) => {
-    console.error(`Error: ${err.message}`);
-    process.exit(1);
-  });
+if (process.env.NODE_ENV !== 'test') {
+  mongoose.connect(MONGO_URI)
+    .then(() => {
+      console.log('MongoDB Connected');
+      // Only listen on the port if not running in Vercel/Production
+      if (process.env.NODE_ENV !== 'production') {
+        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+      }
+    })
+    .catch((err) => {
+      console.error(`Error: ${err.message}`);
+      process.exit(1);
+    });
+}
 
 export default app;
