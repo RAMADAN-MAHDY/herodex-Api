@@ -50,3 +50,20 @@ export const loginSchema = Joi.object({
       'any.required': 'Password is a required field'
     })
 });
+
+export const googleLoginSchema = Joi.object({
+  email: Joi.string()
+    .email()
+    .required()
+    .messages({
+      'string.email': 'Please provide a valid email address',
+      'any.required': 'Email is a required field'
+    }),
+  name: Joi.string()
+    .required()
+    .messages({
+      'any.required': 'Name is a required field'
+    }),
+  googleId: Joi.string().optional(),
+  picture: Joi.string().optional()
+});

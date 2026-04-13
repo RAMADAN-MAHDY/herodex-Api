@@ -1,4 +1,4 @@
-@baseUrl = http://localhost:5000/api
+@baseUrl = https://herodex-api.vercel.app/api
 @contentType = application/json
 
 ### 1. Register a new Admin (Positive Case)
