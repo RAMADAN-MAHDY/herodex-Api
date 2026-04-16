@@ -130,10 +130,6 @@ export const handleWebhook = async (req, res) => {
       await Cart.findOneAndUpdate({ user: order.user }, { items: [] });
       
       console.log(`Order ${order._id} marked as PAID`);
-
-      // Send Telegram Notification to Admin
-      const populatedOrder = await Order.findById(order._id).populate('user');
-      sendOrderNotification(populatedOrder);
     } else {
       order.paymentStatus = 'failed';
       await order.save();
