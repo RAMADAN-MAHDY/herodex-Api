@@ -14,49 +14,19 @@ const bot = new Telegraf(botToken);
 // Handle /start
 bot.start(async (ctx) => {
   const chatId = ctx.chat.id.toString();
-  const admin = await TelegramAdmin.findOne({ chatId });
+  
+  await TelegramAdmin.findOneAndUpdate(
+    { chatId },
+    { 
+      authorized: true, 
+      username: ctx.from.username,
+      firstName: ctx.from.first_name 
+    },
+    { upsert: true, new: true }
+  );
 
-  if (admin && admin.authorized) {
-    return ctx.reply('مرحباً بك مجدداً أيها المسؤول! أنت مسجل بالفعل وتستقبل الطلبات.');
-  }
-
-  ctx.reply('مرحباً بك في بوت إدارة Herodex. من فضلك أدخل كلمة المرور للتسجيل وتلقي إشعارات الطلبات.');
-});
-
-// Handle password input
-bot.on(message('text'), async (ctx) => {
-  const chatId = ctx.chat.id.toString();
-  const text = ctx.message.text.trim();
-
-  console.log(`Received message from ${chatId}: "${text}"`);
-
-  // If message starts with /, don't process as password
-  if (text.startsWith('/')) return;
-
-  const admin = await TelegramAdmin.findOne({ chatId });
-
-  if (admin && admin.authorized) {
-    console.log(`Admin ${chatId} is already authorized.`);
-    return;
-  }
-
-  console.log(`Checking password... Expected: "${adminPassword}"`);
-  if (text === adminPassword) {
-    await TelegramAdmin.findOneAndUpdate(
-      { chatId },
-      { 
-        authorized: true, 
-        username: ctx.from.username,
-        firstName: ctx.from.first_name 
-      },
-      { upsert: true, new: true }
-    );
-    console.log(`Admin ${chatId} authorized successfully.`);
-    ctx.reply('تم التحقق بنجاح! ✅\nستصلك إشعارات الطلبات هنا فور حدوثها.');
-  } else {
-    console.log(`Password mismatch for ${chatId}.`);
-    ctx.reply('❌ كلمة المرور غير صحيحة. من فضلك حاول مرة أخرى.');
-  }
+  console.log(`New Admin Registered: ${chatId}`);
+  ctx.reply('مرحباً بك أيها المسؤول! تم تفعيل حسابك بنجاح لاستقبال إشعارات الطلبات. ✅\nستصلك هنا كافة تفاصيل الطلبات الجديدة فور حدوثها.');
 });
 
 export const initTelegramBot = (app) => {
