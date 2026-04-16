@@ -161,6 +161,15 @@ export const handleRedirect = (req, res) => {
   console.log(`Payment redirect received: success=${success}, transactionId=${finalTransactionId}`);
 
   if (success === 'true') {
+    // Notify admin on successful redirect if you prefer it here
+    Order.findOne({ paymobTransactionId: finalTransactionId })
+      .populate('user')
+      .then(order => {
+        if (order && order.paymentStatus === 'paid') {
+          sendOrderNotification(order);
+        }
+      });
+
     return res.redirect(`${frontendUrl}/checkout/success?transaction_id=${finalTransactionId}`);
   } else {
     // Some providers send success as a boolean string or specific code
