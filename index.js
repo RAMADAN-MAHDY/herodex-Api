@@ -12,6 +12,7 @@ import productRoutes from './src/routes/productRoutes.js';
 import reviewRoutes from './src/routes/reviewRoutes.js';
 import statsRoutes from './src/routes/statsRoutes.js';
 import cartRoutes from './src/routes/cartRoutes.js';
+import orderRoutes from './src/routes/orderRoutes.js';
 
 dotenv.config();
 
@@ -64,6 +65,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Root route
 app.get('/', (req, res) => {
