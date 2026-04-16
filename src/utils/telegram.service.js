@@ -3,7 +3,7 @@ import { message } from 'telegraf/filters';
 import TelegramAdmin from '../models/TelegramAdmin.js';
 
 const botToken = process.env.TELEGRAM_BOT_TOKEN;
-const adminPassword = process.env.TELEGRAM_ADMIN_PASSWORD || 'admin123';
+const adminPassword = process.env.TELEGRAM_ADMIN_PASSWORD || '123456789rR@';
 
 if (!botToken) {
   console.warn('TELEGRAM_BOT_TOKEN is not defined in .env');
@@ -26,7 +26,9 @@ bot.start(async (ctx) => {
 // Handle password input
 bot.on(message('text'), async (ctx) => {
   const chatId = ctx.chat.id.toString();
-  const text = ctx.message.text;
+  const text = ctx.message.text.trim();
+
+  console.log(`Received message from ${chatId}: "${text}"`);
 
   // If message starts with /, don't process as password
   if (text.startsWith('/')) return;
@@ -34,10 +36,11 @@ bot.on(message('text'), async (ctx) => {
   const admin = await TelegramAdmin.findOne({ chatId });
 
   if (admin && admin.authorized) {
-    // Admin is already authorized, we can add a simple help message or just ignore
+    console.log(`Admin ${chatId} is already authorized.`);
     return;
   }
 
+  console.log(`Checking password... Expected: "${adminPassword}"`);
   if (text === adminPassword) {
     await TelegramAdmin.findOneAndUpdate(
       { chatId },
@@ -48,8 +51,10 @@ bot.on(message('text'), async (ctx) => {
       },
       { upsert: true, new: true }
     );
+    console.log(`Admin ${chatId} authorized successfully.`);
     ctx.reply('تم التحقق بنجاح! ✅\nستصلك إشعارات الطلبات هنا فور حدوثها.');
   } else {
+    console.log(`Password mismatch for ${chatId}.`);
     ctx.reply('❌ كلمة المرور غير صحيحة. من فضلك حاول مرة أخرى.');
   }
 });
@@ -57,9 +62,13 @@ bot.on(message('text'), async (ctx) => {
 export const initTelegramBot = (app) => {
   if (!botToken) return;
 
-  if (process.env.NODE_ENV === 'production') {
+  // Detect if running on Vercel or production
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+
+  if (isProduction) {
     const webhookPath = `/api/telegram-webhook`;
-    const webhookUrl = `${process.env.BACKEND_URL}${webhookPath}`;
+    const backendUrl = process.env.BACKEND_URL || `https://${process.env.VERCEL_URL}`;
+    const webhookUrl = `${backendUrl}${webhookPath}`;
     
     app.post(webhookPath, (req, res) => {
       bot.handleUpdate(req.body, res);
@@ -69,6 +78,7 @@ export const initTelegramBot = (app) => {
       .then(() => console.log(`🚀 Telegram Webhook set to: ${webhookUrl}`))
       .catch(err => console.error('Failed to set Telegram Webhook:', err));
   } else {
+    // Local development
     bot.launch()
       .then(() => console.log('🚀 Telegram Bot is running (Long Polling)...'))
       .catch(err => console.error('Failed to launch Telegram Bot:', err));
