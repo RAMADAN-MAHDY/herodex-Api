@@ -130,6 +130,10 @@ export const handleWebhook = async (req, res) => {
       await Cart.findOneAndUpdate({ user: order.user }, { items: [] });
       
       console.log(`Order ${order._id} marked as PAID`);
+
+      // ✅ Send notification to Admin immediately when Webhook confirms payment
+      const populatedOrder = await Order.findById(order._id).populate('user');
+      sendOrderNotification(populatedOrder);
     } else {
       order.paymentStatus = 'failed';
       await order.save();
@@ -161,7 +165,9 @@ export const handleRedirect = (req, res) => {
     Order.findOne({ paymobTransactionId: finalTransactionId })
       .populate('user')
       .then(order => {
-        if (order && order.paymentStatus === 'paid') {
+        // Fallback: Notify if webhook was faster and already updated status, 
+        // OR notify anyway if success is true to be safe
+        if (order) {
           sendOrderNotification(order);
         }
       });
