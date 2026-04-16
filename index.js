@@ -13,6 +13,7 @@ import reviewRoutes from './src/routes/reviewRoutes.js';
 import statsRoutes from './src/routes/statsRoutes.js';
 import cartRoutes from './src/routes/cartRoutes.js';
 import orderRoutes from './src/routes/orderRoutes.js';
+import { initTelegramBot } from './src/utils/telegram.service.js';
 
 dotenv.config();
 
@@ -83,6 +84,7 @@ if (process.env.NODE_ENV !== 'test') {
   mongoose.connect(MONGO_URI)
     .then(() => {
       console.log('MongoDB Connected');
+      initTelegramBot(app); // Start the bot
       // Only listen on the port if not running in Vercel/Production
       if (process.env.NODE_ENV !== 'production') {
         app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -2,6 +2,7 @@ import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
 import paymobService from '../utils/paymob.service.js';
 import { successResponse, errorResponse } from '../utils/responseFormatter.js';
+import { sendOrderNotification } from '../utils/telegram.service.js';
 
 /**
  * Initiate a checkout process
@@ -129,6 +130,10 @@ export const handleWebhook = async (req, res) => {
       await Cart.findOneAndUpdate({ user: order.user }, { items: [] });
       
       console.log(`Order ${order._id} marked as PAID`);
+
+      // Send Telegram Notification to Admin
+      const populatedOrder = await Order.findById(order._id).populate('user');
+      sendOrderNotification(populatedOrder);
     } else {
       order.paymentStatus = 'failed';
       await order.save();
