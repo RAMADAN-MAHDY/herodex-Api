@@ -81,6 +81,8 @@
 ### المصادقة (Auth)
 - `POST /api/auth/login` - تسجيل دخول المستخدم/المسؤول.
 - `POST /api/auth/register` - تسجيل حساب جديد.
+- `GET /api/auth/google` - بدء عملية التسجيل/الدخول باستخدام Google OAuth.
+- `GET /api/auth/me` - جلب بيانات المستخدم الحالي (يتطلب توكن).
 
 ### الأقسام (Categories)
 - `GET /api/categories` - جلب جميع الأقسام.
@@ -184,6 +186,34 @@ const fetchProducts = async (page = 1, limit = 10, categoryId = '') => {
   }
 };
 ```
+
+#### 4. جلب بيانات المستخدم الحالي (Profile / Me)
+يُستخدم هذا المسار للحصول على بيانات المستخدم المسجل حالياً باستخدام التوكن المخزن.
+**الرابط:** `GET /api/auth/me`
+**الترويسات:** `Authorization: Bearer <TOKEN>`
+
+**شكل البيانات العائدة:**
+```json
+{
+  "success": true,
+  "message": "User profile fetched",
+  "data": {
+    "_id": "60d...",
+    "name": "اسم المستخدم",
+    "email": "user@example.com",
+    "role": "user",
+    "avatar": "رابط الصورة"
+  }
+}
+```
+
+#### 5. التسجيل والدخول عبر جوجل (Google OAuth)
+النظام يدعم الدخول الموحد عبر جوجل. لا تحتاج لإرسال بيانات من الفرونت، فقط قم بتوجيه المستخدم للرابط التالي:
+
+1. **بدء العملية:** قم بتوجيه المتصفح إلى `window.location.href = 'https://herodex-api.vercel.app/api/auth/google'`.
+2. **النتيجة:** بعد نجاح الدخول في صفحة جوجل، سيقوم الباك أند بإعادة توجيه المستخدم إلى رابط الفرونت أند (المعرف في `GOOGLE_AUTH_SUCCESS_REDIRECT`) مع إضافة التوكن في الـ URL:
+   `https://frontend.com/auth/success?token=eyJ...&provider=google`
+3. **التعامل مع التوكن:** يجب على الفرونت أند قراءة التوكن من الـ URL وحفظه في `localStorage`.
 
 ### شرح هيكل الاستجابة (Response Structure)
 - **`success`**: قيمة منطقية (Boolean). تكون `true` في حال النجاح و `false` في حال حدوث خطأ.
