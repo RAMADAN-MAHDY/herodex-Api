@@ -35,9 +35,13 @@ export const initTelegramBot = (app) => {
     return;
   }
 
-  // Detect environment
-  const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
-  console.log(`🤖 Initializing Telegram Bot in ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode...`);
+  // Detect environment strictly
+  const nodeEnv = (process.env.NODE_ENV || 'development').toLowerCase();
+  const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL_URL;
+  const isProduction = nodeEnv === 'production' && isVercel;
+
+  console.log(`🤖 Bot Environment: NODE_ENV=${nodeEnv}, Vercel=${isVercel ? 'Yes' : 'No'}`);
+  console.log(`🤖 Mode: ${isProduction ? 'PRODUCTION (Webhook)' : 'DEVELOPMENT (Polling)'}`);
 
   if (isProduction) {
     const webhookPath = `/api/telegram-webhook`;
