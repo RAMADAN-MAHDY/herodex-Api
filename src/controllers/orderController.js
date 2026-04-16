@@ -250,3 +250,26 @@ export const getAllOrders = async (req, res) => {
     return errorResponse(res, 'Failed to fetch orders');
   }
 };
+
+/**
+ * Update Order Status (Admin only)
+ */
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return errorResponse(res, 'Order not found', [], 404);
+    }
+
+    // You could add validation for status values here if not already handled by Mongoose enum
+    order.orderStatus = status;
+    const updatedOrder = await order.save();
+
+    return successResponse(res, 'Order status updated successfully', updatedOrder);
+  } catch (error) {
+    console.error('UpdateOrderStatus Error:', error);
+    return errorResponse(res, 'Failed to update order status');
+  }
+};
