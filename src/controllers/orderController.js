@@ -48,6 +48,7 @@ export const checkout = async (req, res) => {
     });
 
     // 4. Paymob Integration
+    console.log(`Starting Paymob checkout for order ${order._id} via Wallet`);
     const token = await paymobService.authenticate();
     
     // Register Order in Paymob
@@ -59,52 +60,40 @@ export const checkout = async (req, res) => {
     order.paymobOrderId = paymobOrderId;
     await order.save();
 
-    // Generate Payment Key
-    const integrationId = paymentMethod === 'card' 
-      ? process.env.PAYMOB_IFRAME_ID // Note: IFRAME_ID is used for the URL, but integration_id is needed for the key
-      : process.env.PAYMOB_WALLET_INTEGRATION_ID;
-    
-    // Actually, Paymob needs the acceptance integration ID, which is different from the Iframe ID.
-    // However, the user provided PAYMOB_WALLET_INTEGRATION_ID. 
-    // Usually, there's another one for Card. I'll use PAYMOB_IFRAME_ID if that's all I have,
-    // but typically Iframe ID is for the URL, and Integration ID is for the API.
-    // I'll assume the user has configured PAYMOB_IFRAME_ID to represent the Card Integration ID as well,
-    // or I'll look for a CARD_INTEGRATION_ID.
-    
-    const cardIntegrationId = process.env.PAYMOB_CARD_INTEGRATION_ID || process.env.PAYMOB_IFRAME_ID;
+    console.log(`Paymob Order registered: ${paymobOrderId}. Generating payment key for Wallet integration...`);
 
     const paymentKey = await paymobService.generatePaymentKey(token, {
       amountCents,
       orderId: paymobOrderId,
       billingData: {
         first_name: req.user.name.split(' ')[0] || 'N/A',
-        last_name: req.user.name.split(' ')[1] || 'N/A',
+        last_name: req.user.name.split(' ')[1] || 'Guest',
         email: req.user.email,
         phone_number: phone,
         apartment: 'N/A',
         floor: 'N/A',
-        street: shippingAddress.address,
+        street: shippingAddress.address || 'N/A',
         building: 'N/A',
         shipping_method: 'PKG',
-        postal_code: shippingAddress.postalCode,
-        city: shippingAddress.city,
-        country: shippingAddress.country,
+        postal_code: shippingAddress.postalCode || '12345',
+        city: shippingAddress.city || 'Cairo',
+        country: shippingAddress.country || 'Egypt',
         state: 'N/A'
       },
-      integrationId: paymentMethod === 'card' ? cardIntegrationId : process.env.PAYMOB_WALLET_INTEGRATION_ID
+      integrationId: process.env.PAYMOB_WALLET_INTEGRATION_ID
     });
 
-    let paymentUrl = '';
-    if (paymentMethod === 'card') {
-      paymentUrl = `https://egypt.paymob.com/api/acceptance/iframes/${process.env.PAYMOB_IFRAME_ID}?payment_token=${paymentKey}`;
-    } else {
-      paymentUrl = await paymobService.getWalletRedirectUrl(paymentKey, walletNumber);
-    }
+    console.log('Payment key generated. Fetching Wallet redirect URL...');
+    const paymentUrl = await paymobService.getWalletRedirectUrl(paymentKey, walletNumber);
 
     return successResponse(res, 'Payment initialized', { orderId: order._id, paymentUrl });
 
   } catch (error) {
-    console.error('Checkout error:', error);
+    console.error('Detailed Checkout Error:', error);
+    // Log the specific error from Paymob if it exists
+    if (error.response?.data) {
+      console.error('Paymob Error Data:', JSON.stringify(error.response.data, null, 2));
+    }
     return errorResponse(res, error.message || 'Checkout failed');
   }
 };
