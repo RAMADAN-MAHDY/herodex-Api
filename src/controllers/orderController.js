@@ -161,14 +161,18 @@ export const handleRedirect = (req, res) => {
   console.log(`Payment redirect received: success=${success}, transactionId=${finalTransactionId}`);
 
   if (success === 'true') {
-    // Notify admin on successful redirect if you prefer it here
-    Order.findOne({ paymobTransactionId: finalTransactionId })
+    // Notify admin - Use req.query.order (which is the Paymob Order ID) 
+    // because it's already in our DB before the webhook hits.
+    const paymobOrderId = req.query.order;
+    
+    Order.findOne({ paymobOrderId })
       .populate('user')
       .then(order => {
-        // Fallback: Notify if webhook was faster and already updated status, 
-        // OR notify anyway if success is true to be safe
         if (order) {
+          console.log(`Found order ${order._id} for notification via Redirect`);
           sendOrderNotification(order);
+        } else {
+          console.log(`Order not found for Paymob Order ID: ${paymobOrderId} in Redirect`);
         }
       });
 

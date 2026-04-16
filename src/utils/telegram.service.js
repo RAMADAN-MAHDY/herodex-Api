@@ -22,7 +22,7 @@ bot.start(async (ctx) => {
       username: ctx.from.username,
       firstName: ctx.from.first_name 
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   console.log(`New Admin Registered: ${chatId}`);
@@ -82,12 +82,16 @@ export const initTelegramBot = (app) => {
 
 export const sendOrderNotification = async (order) => {
   try {
+    console.log(`Telegram Notification: Processing order ${order._id}...`);
     const admins = await TelegramAdmin.find({ authorized: true });
+    
     if (admins.length === 0) {
-      console.log('No authorized Telegram admins found to notify.');
+      console.log('⚠️ No authorized Telegram admins found in database.');
       return;
     }
 
+    console.log(`Admin(s) found: ${admins.length}. Sending messages...`);
+    
     const message = `
 🔔 *طلب جديد ناجح!*
 --------------------------
