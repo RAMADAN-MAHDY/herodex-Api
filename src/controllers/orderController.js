@@ -146,12 +146,22 @@ export const handleWebhook = async (req, res) => {
  * Handle UI Redirect after payment
  */
 export const handleRedirect = (req, res) => {
-  const { success, transaction_id } = req.query;
+  const { success, transaction_id, id } = req.query;
+  // Use the transaction ID from Paymob (id or transaction_id)
+  const finalTransactionId = transaction_id || id;
+  
+  // Get production frontend URL from env, fallback to localhost for dev
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
+  console.log(`Payment redirect received: success=${success}, transactionId=${finalTransactionId}`);
+
   if (success === 'true') {
-    return res.redirect(`${frontendUrl}/checkout/success?transaction_id=${transaction_id}`);
+    return res.redirect(`${frontendUrl}/checkout/success?transaction_id=${finalTransactionId}`);
   } else {
+    // Some providers send success as a boolean string or specific code
+    if (success === 'true' || req.query.txn_response_code === '200') {
+        return res.redirect(`${frontendUrl}/checkout/success?transaction_id=${finalTransactionId}`);
+    }
     return res.redirect(`${frontendUrl}/checkout/error`);
   }
 };
