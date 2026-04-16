@@ -30,14 +30,24 @@ bot.start(async (ctx) => {
 });
 
 export const initTelegramBot = (app) => {
-  if (!botToken) return;
+  if (!botToken) {
+    console.error('❌ TELEGRAM_BOT_TOKEN is missing! Bot cannot start.');
+    return;
+  }
 
-  // Detect if running on Vercel or production
+  // Detect environment
   const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+  console.log(`🤖 Initializing Telegram Bot in ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode...`);
 
   if (isProduction) {
     const webhookPath = `/api/telegram-webhook`;
-    const backendUrl = process.env.BACKEND_URL || `https://${process.env.VERCEL_URL}`;
+    const backendUrl = process.env.BACKEND_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
+    
+    if (!backendUrl) {
+      console.error('❌ BACKEND_URL or VERCEL_URL is missing! Webhook cannot be set.');
+      return;
+    }
+
     const webhookUrl = `${backendUrl}${webhookPath}`;
     
     app.post(webhookPath, (req, res) => {
@@ -45,13 +55,24 @@ export const initTelegramBot = (app) => {
     });
 
     bot.telegram.setWebhook(webhookUrl)
-      .then(() => console.log(`🚀 Telegram Webhook set to: ${webhookUrl}`))
-      .catch(err => console.error('Failed to set Telegram Webhook:', err));
+      .then(() => {
+        console.log(`✅ Telegram Webhook successfully set to: ${webhookUrl}`);
+      })
+      .catch(err => {
+        console.error('❌ Failed to set Telegram Webhook:', err.message);
+      });
   } else {
-    // Local development
-    bot.launch()
-      .then(() => console.log('🚀 Telegram Bot is running (Long Polling)...'))
-      .catch(err => console.error('Failed to launch Telegram Bot:', err));
+    // Local development - Using deleteWebhook first to ensure switching from production works
+    bot.telegram.deleteWebhook()
+      .then(() => {
+        return bot.launch();
+      })
+      .then(() => {
+        console.log('🚀 Telegram Bot is running (Long Polling)...');
+      })
+      .catch(err => {
+        console.error('❌ Failed to launch Telegram Bot (Local):', err.message);
+      });
   }
 };
 
