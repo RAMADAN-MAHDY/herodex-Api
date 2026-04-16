@@ -3,9 +3,10 @@ import {
   checkout, 
   handleWebhook, 
   handleRedirect, 
-  getMyOrders 
+  getMyOrders,
+  getAllOrders
 } from '../controllers/orderController.js';
-import { protect } from '../middlewares/authMiddleware.js';
+import { protect, admin } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -18,5 +19,8 @@ router.get('/callback', handleRedirect);
 // Protected routes
 router.post('/checkout', protect, checkout);
 router.get('/myorders', protect, getMyOrders);
+
+// Admin routes
+router.get('/', protect, admin, getAllOrders);
 
 export default router;

@@ -1,5 +1,6 @@
 import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
+import User from '../models/User.js';
 import paymobService from '../utils/paymob.service.js';
 import { successResponse, errorResponse } from '../utils/responseFormatter.js';
 import { sendOrderNotification } from '../utils/telegram.service.js';
@@ -194,6 +195,58 @@ export const getMyOrders = async (req, res) => {
     const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
     return successResponse(res, 'Orders fetched', orders);
   } catch (error) {
+    return errorResponse(res, 'Failed to fetch orders');
+  }
+};
+
+/**
+ * Get all orders (Admin only)
+ */
+export const getAllOrders = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
+    const { search } = req.query;
+    let query = {};
+
+    if (search) {
+      // 1. Find users matching the search name/email
+      const users = await User.find({
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
+      }).select('_id').lean();
+      
+      const userIds = users.map(u => u._id);
+
+      // 2. Build order query: search by user IDs OR shipping phone
+      query = {
+        $or: [
+          { user: { $in: userIds } },
+          { 'shippingAddress.phone': { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+
+    const count = await Order.countDocuments(query);
+    const orders = await Order.find(query)
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip(skip)
+      .lean();
+
+    return successResponse(res, 'Orders fetched', {
+      orders,
+      page,
+      pages: Math.ceil(count / limit),
+      totalItems: count
+    });
+  } catch (error) {
+    console.error('GetAllOrders Error:', error);
     return errorResponse(res, 'Failed to fetch orders');
   }
 };
