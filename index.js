@@ -83,18 +83,21 @@ const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 
 if (process.env.NODE_ENV !== 'test') {
+  // Start the bot independently of DB to help debugging
+  initTelegramBot(app);
+
   mongoose.connect(MONGO_URI)
     .then(() => {
-      console.log('MongoDB Connected');
-      initTelegramBot(app); // Start the bot
+      console.log('✅ MongoDB Connected');
       // Only listen on the port if not running in Vercel/Production
       if (process.env.NODE_ENV !== 'production') {
-        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+        app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
       }
     })
     .catch((err) => {
-      console.error(`Error: ${err.message}`);
-      process.exit(1);
+      console.error(`❌ MongoDB Connection Error: ${err.message}`);
+      // Don't exit process locally so we can still test the bot
+      if (process.env.NODE_ENV === 'production') process.exit(1);
     });
 }
 
