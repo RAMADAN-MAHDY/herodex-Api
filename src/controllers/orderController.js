@@ -105,7 +105,13 @@ export const checkout = async (req, res) => {
  */
 export const handleWebhook = async (req, res) => {
   try {
-    const { obj: transaction, hmac } = req.body;
+    const transaction = req.body.obj;
+    const hmac = req.query.hmac || req.body.hmac;
+
+    if (!transaction || !hmac) {
+      console.error('Missing transaction data or HMAC');
+      return res.status(400).send('Missing data');
+    }
 
     // Verify HMAC
     const isValid = paymobService.verifyHMAC(transaction, hmac);

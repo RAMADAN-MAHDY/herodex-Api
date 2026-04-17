@@ -132,18 +132,36 @@ class PaymobService {
     const stringToHash = fields
       .map((field) => {
         const value = field.split('.').reduce((obj, key) => obj?.[key], hmacData);
-        // Normalize booleans and undefined
-        if (typeof value === 'boolean') return value ? 'true' : 'false';
-        return value ?? '';
+        // Normalize values according to Paymob rules
+        if (value === true || value === 'true') return 'true';
+        if (value === false || value === 'false') return 'false';
+        if (value === null || value === undefined) return '';
+        return value.toString();
       })
       .join('');
+
+    if (!this.hmacSecret) {
+      console.error('PAYMOB_HMAC_SECRET is not defined in environment variables');
+      return false;
+    }
 
     const calculatedHmac = crypto
       .createHmac('sha512', this.hmacSecret)
       .update(stringToHash)
       .digest('hex');
 
-    return calculatedHmac === receivedHmac;
+    const isValid = calculatedHmac.toLowerCase() === receivedHmac.toLowerCase();
+    
+    if (!isValid) {
+      console.log('--- HMAC Debug Info ---');
+      console.log('Fields used:', fields.join(', '));
+      console.log('String to Hash:', stringToHash);
+      console.log('Calculated HMAC:', calculatedHmac);
+      console.log('Received HMAC:', receivedHmac);
+      console.log('-----------------------');
+    }
+
+    return isValid;
   }
 }
 
