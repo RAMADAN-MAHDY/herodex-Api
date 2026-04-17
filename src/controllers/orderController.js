@@ -127,6 +127,8 @@ export const handleWebhook = async (req, res) => {
       console.error('Order not found for Paymob ID:', paymobOrderId);
       return res.status(404).send('Order not found');
     }
+    console.log('transaction:----------------------');
+    console.log(transaction);
 
     if (transaction.success === true) {
       order.paymentStatus = 'paid';
