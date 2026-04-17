@@ -51,6 +51,7 @@ app.use(helmet({
   referrerPolicy: { policy: "no-referrer" },
 }));
 
+// cors
 const corsOptions = {
   origin: ["http://localhost:3000", "https://herodex-navy.vercel.app"],
   credentials: true,
