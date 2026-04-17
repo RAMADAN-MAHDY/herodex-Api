@@ -127,8 +127,8 @@ export const handleWebhook = async (req, res) => {
       console.error('Order not found for Paymob ID:', paymobOrderId);
       return res.status(404).send('Order not found');
     }
-    console.log('transaction:----------------------');
-    console.log(transaction);
+    // console.log('transaction:----------------------');
+    // console.log(transaction);
 
     if (transaction.success === true) {
       order.paymentStatus = 'paid';
@@ -141,8 +141,8 @@ export const handleWebhook = async (req, res) => {
       console.log(`Order ${order._id} marked as PAID`);
 
       // ✅ Send notification to Admin immediately when Webhook confirms payment
-      const populatedOrder = await Order.findById(order._id).populate('user');
-      sendOrderNotification(populatedOrder);
+      // const populatedOrder = await Order.findById(order._id).populate('user');
+      // sendOrderNotification(populatedOrder);
     } else {
       order.paymentStatus = 'failed';
       await order.save();
