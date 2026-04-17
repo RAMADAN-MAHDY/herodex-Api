@@ -49,8 +49,22 @@ export const checkout = async (req, res) => {
       paymentStatus: 'pending'
     });
 
-    // 4. Paymob Integration
-    console.log(`Starting Paymob checkout for order ${order._id} via Wallet`);
+    // 4. Handle Cash on Delivery (COD)
+    if (paymentMethod === 'COD') {
+      console.log(`Order ${order._id} created with COD. Skipping Paymob.`);
+      
+      // Clear user's cart
+      await Cart.findOneAndUpdate({ user: req.user._id }, { items: [] });
+      
+      // Send notification to Admin
+      const populatedOrder = await Order.findById(order._id).populate('user');
+      sendOrderNotification(populatedOrder);
+      
+      return successResponse(res, 'Order placed successfully (Cash on Delivery)', { orderId: order._id });
+    }
+
+    // 5. Paymob Integration
+    console.log(`Starting Paymob checkout for order ${order._id} via ${paymentMethod}`);
     const token = await paymobService.authenticate();
     
     // Register Order in Paymob

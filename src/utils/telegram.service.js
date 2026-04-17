@@ -93,19 +93,19 @@ export const sendOrderNotification = async (order) => {
     console.log(`Admin(s) found: ${admins.length}. Sending messages...`);
     
     const message = `
-🔔 *طلب جديد ناجح!*
+🔔 *طلب جديد!*
 --------------------------
 🆔 *رقم الطلب:* \`${order._id}\`
 👤 *العميل:* ${order.user?.name || 'مستخدم غير معروف'}
 📞 *رقم الهاتف:* \`${order.shippingAddress.phone}\`
 💰 *المبلغ الإجمالي:* ${order.totalPrice} EGP
-💳 *طريقة الدفع:* ${order.paymentMethod === 'wallet' ? '📱 محفظة إلكترونية' : '💳 بطاقة بنكية'}
+💳 *طريقة الدفع:* ${order.paymentMethod === 'wallet' ? '📱 محفظة إلكترونية' : order.paymentMethod === 'COD' ? '💵 دفع عند الاستلام' : '💳 بطاقة بنكية'}
 📍 *العنوان:* ${order.shippingAddress.address}, ${order.shippingAddress.city}
 
 📦 *المنتجات:*
 ${order.items.map(item => `- ${item.name} (${item.quantity} x ${item.price} EGP)`).join('\n')}
 
-✅ تمت عملية الدفع بنجاح.
+${order.paymentMethod === 'COD' ? '⏳ بانتظار التحصيل عند الاستلام.' : '✅ تمت عملية الدفع بنجاح.'}
     `;
 
     for (const admin of admins) {

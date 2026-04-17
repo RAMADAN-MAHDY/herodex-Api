@@ -73,6 +73,32 @@ const handleWalletCheckout = async (walletNumber) => {
 };
 ```
 
+### ج. الدفع عند الاستلام (Cash on Delivery - COD)
+في حالة الدفع عند الاستلام، لا يتم توجيه المستخدم لـ Paymob. يتم إنشاء الطلب مباشرة وإرجاع رسالة نجاح.
+
+```javascript
+const handleCODCheckout = async () => {
+  const payload = {
+    paymentMethod: 'COD',
+    shippingAddress: {
+      address: '123 اسم الشارع',
+      city: 'القاهرة',
+      postalCode: '12345',
+      country: 'Egypt',
+      phone: '010XXXXXXXX',
+    },
+  };
+
+  const { data } = await axios.post('/api/orders/checkout', payload, config);
+
+  if (data.success) {
+    // توجيه المستخدم مباشرة لصفحة النجاح الخاصة بك
+    // ملاحظة: لا يوجد paymentUrl هنا
+    window.location.href = '/checkout/success?order_id=' + data.data.orderId;
+  }
+};
+```
+
 ---
 
 ## 2. معالجة الرد (Redirects)
@@ -115,8 +141,8 @@ const getMyOrders = async () => {
 {
   "_id": "64...",
   "totalPrice": 150.5,
-  "paymentStatus": "paid", // الحالات: "paid", "pending", "failed"
-  "paymentMethod": "card", // أو "wallet"
+  "paymentStatus": "pending", // الحالات: "paid", "pending", "failed"
+  "paymentMethod": "COD", // أو "wallet" أو "card"
   "items": [
     {
       "product": "64...",
@@ -134,4 +160,4 @@ const getMyOrders = async () => {
 
 ## ملاحظات هامة
 - **التوجيه:** استخدم دائماً `window.location.href` للانتقال إلى `paymentUrl` لأنه يوجه المستخدم لمواقع خارجية.
-- **تفريغ السلة:** يقوم الباك إند تلقائياً بتفريغ سلة المشتريات من قاعدة البيانات **فقط عند تأكيد نجاح الدفع**. يجب عليك تفريغ السلة في الحالة المحلية (Local State) عند الوصول لصفحة النجاح.
+- **تفريغ السلة:** يقوم الباك إند تلقائياً بتفريغ سلة المشتريات من قاعدة البيانات عند **تأكيد نجاح الدفع (Card/Wallet)** أو **مباشرة بعد طلب (COD)**. يجب عليك تفريغ السلة في الحالة المحلية (Local State) عند الوصول لصفحة النجاح.
