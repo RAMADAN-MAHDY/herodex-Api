@@ -52,21 +52,21 @@ export const checkout = async (req, res) => {
     // 4. Handle Cash on Delivery (COD)
     if (paymentMethod === 'COD') {
       console.log(`Order ${order._id} created with COD. Skipping Paymob.`);
-      
+
       // Clear user's cart
       await Cart.findOneAndUpdate({ user: req.user._id }, { items: [] });
-      
+
       // Send notification to Admin
       const populatedOrder = await Order.findById(order._id).populate('user');
       sendOrderNotification(populatedOrder);
-      
+
       return successResponse(res, 'Order placed successfully (Cash on Delivery)', { orderId: order._id });
     }
 
     // 5. Paymob Integration
     console.log(`Starting Paymob checkout for order ${order._id} via ${paymentMethod}`);
     const token = await paymobService.authenticate();
-    
+
     // Register Order in Paymob
     const paymobOrderId = await paymobService.registerOrder(token, {
       amountCents,
@@ -151,8 +151,16 @@ export const handleWebhook = async (req, res) => {
 
       // Clear the user's cart
       await Cart.findOneAndUpdate({ user: order.user }, { items: [] });
-      
+
       console.log(`Order ${order._id} marked as PAID`);
+
+      console.log({
+        success: transaction.success,
+        pending: transaction.pending,
+        amount_cents: transaction.amount.amount_cents,
+        order_id: transaction.order.order_id,
+        integration_id: transaction.order.integration_id
+      })
 
       // ✅ Send notification to Admin immediately when Webhook confirms payment
       // const populatedOrder = await Order.findById(order._id).populate('user');
@@ -177,7 +185,7 @@ export const handleRedirect = (req, res) => {
   const { success, transaction_id, id } = req.query;
   // Use the transaction ID from Paymob (id or transaction_id)
   const finalTransactionId = transaction_id || id;
-  
+
   // Get production frontend URL from env, fallback to localhost for dev
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
@@ -187,7 +195,7 @@ export const handleRedirect = (req, res) => {
     // Notify admin - Use req.query.order (which is the Paymob Order ID) 
     // because it's already in our DB before the webhook hits.
     const paymobOrderId = req.query.order;
-    
+
     Order.findOne({ paymobOrderId })
       .populate('user')
       .then(order => {
@@ -203,7 +211,7 @@ export const handleRedirect = (req, res) => {
   } else {
     // Some providers send success as a boolean string or specific code
     if (success === 'true' || req.query.txn_response_code === '200') {
-        return res.redirect(`${frontendUrl}/checkout/success?transaction_id=${finalTransactionId}`);
+      return res.redirect(`${frontendUrl}/checkout/success?transaction_id=${finalTransactionId}`);
     }
     return res.redirect(`${frontendUrl}/checkout/error`);
   }
@@ -229,7 +237,7 @@ export const getAllOrders = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    
+
     const { search } = req.query;
     let query = {};
 
@@ -241,7 +249,7 @@ export const getAllOrders = async (req, res) => {
           { email: { $regex: search, $options: 'i' } }
         ]
       }).select('_id').lean();
-      
+
       const userIds = users.map(u => u._id);
 
       // 2. Build order query: search by user IDs OR shipping phone
