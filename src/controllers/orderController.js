@@ -168,7 +168,16 @@ export const handleWebhook = async (req, res) => {
     } else {
       order.paymentStatus = 'failed';
       await order.save();
+      
       console.log(`Order ${order._id} marked as FAILED`);
+      
+      console.log({
+        success: transaction.success,
+        pending: transaction.pending,
+        amount_cents: transaction.amount.amount_cents,
+        order_id: transaction.order.order_id,
+        integration_id: transaction.order.integration_id
+      })
     }
 
     return res.status(200).send('OK');
