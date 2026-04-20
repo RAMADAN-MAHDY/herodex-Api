@@ -53,7 +53,7 @@ app.use(helmet({
 
 // cors
 const corsOptions = {
-  origin: ["http://localhost:3000", "https://herodex-navy.vercel.app", "https://herodex-git-test-kharjclean-8981s-projects.vercel.app"],
+  origin: ["http://localhost:3000", "https://herodex-navy.vercel.app", "https://herodex-git-test-kharjclean-8981s-projects.vercel.app" ,"https://www.herodex-pharma.com"],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
