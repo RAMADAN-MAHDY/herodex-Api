@@ -316,3 +316,16 @@ export const updateOrderStatus = async (req, res) => {
     return errorResponse(res, 'Failed to update order status');
   }
 };
+
+/**
+ * Delete all orders (Admin only - for testing)
+ */
+export const deleteAllOrders = async (req, res) => {
+  try {
+    await Order.deleteMany({});
+    return successResponse(res, 'All orders deleted successfully');
+  } catch (error) {
+    console.error('DeleteAllOrders Error:', error);
+    return errorResponse(res, 'Failed to delete all orders');
+  }
+};

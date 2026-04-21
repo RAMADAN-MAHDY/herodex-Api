@@ -5,7 +5,8 @@ import {
   handleRedirect, 
   getMyOrders,
   getAllOrders,
-  updateOrderStatus
+  updateOrderStatus,
+  deleteAllOrders
 } from '../controllers/orderController.js';
 import { protect, admin } from '../middlewares/authMiddleware.js';
 
@@ -23,6 +24,7 @@ router.get('/myorders', protect, getMyOrders);
 
 // Admin routes
 router.get('/', protect, admin, getAllOrders);
+router.delete('/', protect, admin, deleteAllOrders);
 router.put('/:id/status', protect, admin, updateOrderStatus);
 
 export default router;
