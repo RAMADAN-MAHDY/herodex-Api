@@ -141,8 +141,9 @@ export const handleWebhook = async (req, res) => {
       console.error('Order not found for Paymob ID:', paymobOrderId);
       return res.status(404).send('Order not found');
     }
-    // console.log('transaction:----------------------');
-    // console.log(transaction);
+
+    console.log('Webhook transaction received:');
+    console.log(JSON.stringify(transaction, null, 2));
 
     if (transaction.success === true && transaction.pending === false) {
       order.paymentStatus = 'paid';
@@ -152,37 +153,39 @@ export const handleWebhook = async (req, res) => {
       // Clear the user's cart
       await Cart.findOneAndUpdate({ user: order.user }, { items: [] });
 
-      console.log(`Order ${order._id} marked as PAID`);
+      console.log(`✅ Order ${order._id} marked as PAID`);
 
       console.log({
         success: transaction.success,
         pending: transaction.pending,
-        amount_cents: transaction.amount_cents,
+        amount_cents: transaction.amount_cents || 0,
         order_id: transaction.order?.id,
         integration_id: transaction.integration_id
-      })
+      });
 
       // ✅ Send notification to Admin immediately when Webhook confirms payment
-      // const populatedOrder = await Order.findById(order._id).populate('user');
-      // sendOrderNotification(populatedOrder);
+      const populatedOrder = await Order.findById(order._id).populate('user');
+      sendOrderNotification(populatedOrder);
     } else {
       order.paymentStatus = 'failed';
       await order.save();
 
-      console.log(`Order ${order._id} marked as FAILED`);
+      console.log(`❌ Order ${order._id} marked as FAILED`);
+      console.log(`Success: ${transaction.success}, Pending: ${transaction.pending}`);
 
       console.log({
         success: transaction.success,
         pending: transaction.pending,
-        amount_cents: transaction.amount.amount_cents,
-        order_id: transaction.order.order_id,
-        integration_id: transaction.order.integration_id
-      })
+        amount_cents: transaction.amount_cents || 0,
+        order_id: transaction.order?.id,
+        integration_id: transaction.integration_id
+      });
     }
 
     return res.status(200).send('OK');
   } catch (error) {
     console.error('Webhook processing error:', error);
+    console.error('Error details:', error.message);
     return res.status(500).send('Internal Server Error');
   }
 };
@@ -214,7 +217,8 @@ export const handleRedirect = (req, res) => {
         } else {
           console.log(`Order not found for Paymob Order ID: ${paymobOrderId} in Redirect`);
         }
-      });
+      })
+      .catch(err => console.error('Error finding order in redirect:', err));
 
     return res.redirect(`${frontendUrl}/checkout/success?transaction_id=${finalTransactionId}`);
   } else {
