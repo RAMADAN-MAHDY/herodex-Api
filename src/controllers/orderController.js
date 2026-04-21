@@ -144,7 +144,7 @@ export const handleWebhook = async (req, res) => {
     // console.log('transaction:----------------------');
     // console.log(transaction);
 
-    if (transaction.success === true) {
+    if (transaction.success === true && transaction.pending === false) {
       order.paymentStatus = 'paid';
       order.paymobTransactionId = transaction.id;
       await order.save();
@@ -157,9 +157,9 @@ export const handleWebhook = async (req, res) => {
       console.log({
         success: transaction.success,
         pending: transaction.pending,
-        amount_cents: transaction.amount.amount_cents,
-        order_id: transaction.order.order_id,
-        integration_id: transaction.order.integration_id
+        amount_cents: transaction.amount_cents,
+        order_id: transaction.order?.id,
+        integration_id: transaction.integration_id
       })
 
       // ✅ Send notification to Admin immediately when Webhook confirms payment
@@ -168,9 +168,9 @@ export const handleWebhook = async (req, res) => {
     } else {
       order.paymentStatus = 'failed';
       await order.save();
-      
+
       console.log(`Order ${order._id} marked as FAILED`);
-      
+
       console.log({
         success: transaction.success,
         pending: transaction.pending,
