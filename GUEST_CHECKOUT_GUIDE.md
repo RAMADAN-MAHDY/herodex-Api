@@ -58,7 +58,7 @@ const checkoutData = {
     country: "Egypt",
     phone: "01012345678"
   },
-  paymentMethod: "COD", // أو 'wallet'
+  paymentMethod: "COD", 
 };
 
 api.post('/orders/checkout', checkoutData)
