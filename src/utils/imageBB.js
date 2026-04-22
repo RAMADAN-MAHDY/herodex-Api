@@ -17,7 +17,10 @@ export const uploadToImageBB = async (fileBuffer) => {
     });
 
     if (response.data && response.data.success) {
-      return response.data.data.url;
+      return {
+        url: response.data.data.url,
+        deleteUrl: response.data.data.delete_url
+      };
     } else {
       throw new Error(response.data?.message || 'Failed to upload image to ImageBB');
     }

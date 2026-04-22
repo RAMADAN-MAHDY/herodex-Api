@@ -15,6 +15,7 @@ import reviewRoutes from './src/routes/reviewRoutes.js';
 import statsRoutes from './src/routes/statsRoutes.js';
 import cartRoutes from './src/routes/cartRoutes.js';
 import orderRoutes from './src/routes/orderRoutes.js';
+import imageRoutes from './src/routes/imageRoutes.js';
 import { initTelegramBot } from './src/utils/telegram.service.js';
 
 dotenv.config();
@@ -23,6 +24,9 @@ dotenv.config();
 const app = express();
 
 app.set('trust proxy', 1);
+
+// Serve static files from the 'uploads' directory
+app.use('/uploads', express.static('uploads'));
 
 // Security Middleware
 app.use(helmet({
@@ -70,6 +74,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/images', imageRoutes);
 
 // Fix: Initialize Bot BEFORE error middlewares
 if (process.env.NODE_ENV !== 'test') {

@@ -2,6 +2,7 @@ import Product from '../models/Product.js';
 import { uploadToImageBB } from '../utils/imageBB.js';
 import { successResponse, errorResponse } from '../utils/responseFormatter.js';
 import { productSchema, updateProductSchema } from '../validators/productValidator.js';
+import axios from 'axios';
 
 export const getProducts = async (req, res) => {
   const pageSize = Number(req.query.limit) || 10;
@@ -33,13 +34,14 @@ export const createProduct = async (req, res) => {
   if (!req.file) return errorResponse(res, 'Product image is required', [], 400);
 
   try {
-    const imageUrl = await uploadToImageBB(req.file.buffer);
+    const { url: imageUrl, deleteUrl } = await uploadToImageBB(req.file.buffer);
     const { name, price, description, category } = req.body;
     const product = await Product.create({
       name,
       price,
       description,
       image: imageUrl,
+      deleteUrl,
       category
     });
     return successResponse(res, 'Product created', product, 201);
@@ -62,14 +64,27 @@ export const updateProduct = async (req, res) => {
 
   try {
     let imageUrl = product.image;
+    let deleteUrl = product.deleteUrl;
     if (req.file) {
-      imageUrl = await uploadToImageBB(req.file.buffer);
+      // Delete old image from ImageBB if it exists
+      if (product.deleteUrl) {
+        try {
+          await axios.delete(product.deleteUrl);
+          console.log(`Old product image deleted from ImageBB: ${product.deleteUrl}`);
+        } catch (imgbbError) {
+          console.error(`Failed to delete old product image from ImageBB (${product.deleteUrl}):`, imgbbError.message);
+        }
+      }
+      const result = await uploadToImageBB(req.file.buffer);
+      imageUrl = result.url;
+      deleteUrl = result.deleteUrl;
     }
 
     product.name = req.body.name || product.name;
     product.price = req.body.price || product.price;
     product.description = req.body.description || product.description;
     product.image = imageUrl;
+    product.deleteUrl = deleteUrl;
     product.category = req.body.category || product.category;
 
     const updatedProduct = await product.save();
@@ -85,6 +100,17 @@ export const deleteProduct = async (req, res) => {
   const product = await Product.findById(id);
 
   if (!product) return errorResponse(res, 'Product not found', [], 404);
+
+  // Attempt to delete image from ImageBB
+  if (product.deleteUrl) {
+    try {
+      await axios.delete(product.deleteUrl);
+      console.log(`Product image deleted from ImageBB: ${product.deleteUrl}`);
+    } catch (imgbbError) {
+      console.error(`Failed to delete product image from ImageBB (${product.deleteUrl}):`, imgbbError.message);
+      // Continue to delete from our database even if ImageBB deletion fails
+    }
+  }
 
   await Product.deleteOne({ _id: id });
   return successResponse(res, 'Product deleted');
