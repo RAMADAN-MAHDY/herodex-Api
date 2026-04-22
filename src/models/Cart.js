@@ -5,7 +5,6 @@ const cartSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: false,
-    unique: true,
     sparse: true
   },
   guestId: {
