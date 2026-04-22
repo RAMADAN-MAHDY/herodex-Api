@@ -8,7 +8,7 @@ import {
   updateOrderStatus,
   deleteAllOrders
 } from '../controllers/orderController.js';
-import { protect, admin } from '../middlewares/authMiddleware.js';
+import { protect, admin, identifyUser } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -18,8 +18,10 @@ const router = express.Router();
 router.post('/webhook', handleWebhook);
 router.get('/callback', handleRedirect);
 
-// Protected routes
-router.post('/checkout', protect, checkout);
+// Identified routes (User or Guest)
+router.post('/checkout', identifyUser, checkout);
+
+// Protected routes (User only)
 router.get('/myorders', protect, getMyOrders);
 
 // Admin routes

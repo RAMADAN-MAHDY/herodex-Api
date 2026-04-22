@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
 import { successResponse, errorResponse } from '../utils/responseFormatter.js';
 import { registerSchema, loginSchema, googleLoginSchema } from '../validators/userValidator.js';
+import { mergeGuestCart } from './cartController.js';
 import axios from 'axios';
 import crypto from 'crypto';
 
@@ -66,6 +67,12 @@ export const loginUser = async (req, res) => {
   const user = await User.findOne({ email });
 
   if (user && (await user.comparePassword(password))) {
+    // Merge guest cart if guestId is provided
+    const guestId = req.headers['x-guest-id'];
+    if (guestId) {
+      await mergeGuestCart(user._id, guestId);
+    }
+
     return successResponse(res, 'Login successful', {
       _id: user._id,
       name: user.name,
@@ -92,6 +99,12 @@ export const registerUser = async (req, res) => {
 
   const user = await User.create({ name, email, password, role });
   if (user) {
+    // Merge guest cart if guestId is provided
+    const guestId = req.headers['x-guest-id'];
+    if (guestId) {
+      await mergeGuestCart(user._id, guestId);
+    }
+
     return successResponse(res, 'User registered', {
       _id: user._id,
       name: user.name,
@@ -122,6 +135,12 @@ export const googleLogin = async (req, res) => {
       password: randomPassword,
       role: 'user',
     });
+  }
+
+  // Merge guest cart if guestId is provided
+  const guestId = req.headers['x-guest-id'];
+  if (guestId) {
+    await mergeGuestCart(user._id, guestId);
   }
 
   return successResponse(res, 'Login successful', {

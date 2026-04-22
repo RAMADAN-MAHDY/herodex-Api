@@ -2,10 +2,11 @@ import Cart from '../models/Cart.js';
 import { successResponse, errorResponse } from '../utils/responseFormatter.js';
 
 export const getCart = async (req, res) => {
-  let cart = await Cart.findOne({ user: req.user._id }).populate('items.product').lean();
+  const query = req.user ? { user: req.user._id } : { guestId: req.guestId };
+  let cart = await Cart.findOne(query).populate('items.product').lean();
   
   if (!cart) {
-    cart = await Cart.create({ user: req.user._id, items: [] });
+    cart = await Cart.create({ ...query, items: [] });
   }
 
   return successResponse(res, 'Cart fetched', cart);
@@ -14,10 +15,11 @@ export const getCart = async (req, res) => {
 export const addToCart = async (req, res) => {
   const { productId, quantity } = req.body;
   
-  let cart = await Cart.findOne({ user: req.user._id });
+  const query = req.user ? { user: req.user._id } : { guestId: req.guestId };
+  let cart = await Cart.findOne(query);
 
   if (!cart) {
-    cart = await Cart.create({ user: req.user._id, items: [] });
+    cart = await Cart.create({ ...query, items: [] });
   }
 
   const itemIndex = cart.items.findIndex(item => item.product.toString() === productId);
@@ -39,7 +41,8 @@ export const updateCartItem = async (req, res) => {
   
   if (quantity < 1) return errorResponse(res, 'Quantity must be at least 1', [], 400);
 
-  const cart = await Cart.findOne({ user: req.user._id });
+  const query = req.user ? { user: req.user._id } : { guestId: req.guestId };
+  const cart = await Cart.findOne(query);
   if (!cart) return errorResponse(res, 'Cart not found', [], 404);
 
   const itemIndex = cart.items.findIndex(item => item.product.toString() === productId);
@@ -57,7 +60,8 @@ export const updateCartItem = async (req, res) => {
 export const removeFromCart = async (req, res) => {
   const { productId } = req.params;
 
-  const cart = await Cart.findOne({ user: req.user._id });
+  const query = req.user ? { user: req.user._id } : { guestId: req.guestId };
+  const cart = await Cart.findOne(query);
   if (!cart) return errorResponse(res, 'Cart not found', [], 404);
 
   cart.items = cart.items.filter(item => item.product.toString() !== productId);
@@ -68,10 +72,47 @@ export const removeFromCart = async (req, res) => {
 };
 
 export const clearCart = async (req, res) => {
-  const cart = await Cart.findOne({ user: req.user._id });
+  const query = req.user ? { user: req.user._id } : { guestId: req.guestId };
+  const cart = await Cart.findOne(query);
   if (cart) {
     cart.items = [];
     await cart.save();
   }
   return successResponse(res, 'Cart cleared');
+};
+
+/**
+ * Merge a guest cart into a user's cart
+ */
+export const mergeGuestCart = async (userId, guestId) => {
+  if (!guestId) return;
+
+  const guestCart = await Cart.findOne({ guestId });
+  if (!guestCart || guestCart.items.length === 0) return;
+
+  let userCart = await Cart.findOne({ user: userId });
+  if (!userCart) {
+    userCart = await Cart.create({ user: userId, items: [] });
+  }
+
+  // Merge items
+  for (const guestItem of guestCart.items) {
+    const itemIndex = userCart.items.findIndex(
+      item => item.product.toString() === guestItem.product.toString()
+    );
+
+    if (itemIndex > -1) {
+      userCart.items[itemIndex].quantity += guestItem.quantity;
+    } else {
+      userCart.items.push({
+        product: guestItem.product,
+        quantity: guestItem.quantity
+      });
+    }
+  }
+
+  await userCart.save();
+  
+  // Clear or delete guest cart
+  await Cart.deleteOne({ _id: guestCart._id });
 };

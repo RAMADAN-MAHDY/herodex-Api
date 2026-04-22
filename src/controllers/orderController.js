@@ -21,8 +21,10 @@ export const checkout = async (req, res) => {
       return errorResponse(res, 'Wallet number is required for wallet payments', [], 400);
     }
 
-    // 1. Get User's Cart
-    const cart = await Cart.findOne({ user: req.user._id }).populate('items.product');
+    // 1. Get Cart (User or Guest)
+    const cartQuery = req.user ? { user: req.user._id } : { guestId: req.guestId };
+    const cart = await Cart.findOne(cartQuery).populate('items.product');
+    
     if (!cart || cart.items.length === 0) {
       return errorResponse(res, 'Cart is empty', [], 400);
     }
@@ -40,21 +42,28 @@ export const checkout = async (req, res) => {
     const amountCents = Math.round(totalPrice * 100);
 
     // 3. Create local Order (Pending)
-    const order = await Order.create({
-      user: req.user._id,
+    const orderData = {
       items,
       shippingAddress,
       totalPrice,
       paymentMethod,
       paymentStatus: 'pending'
-    });
+    };
+
+    if (req.user) {
+      orderData.user = req.user._id;
+    } else {
+      orderData.guestId = req.guestId;
+    }
+
+    const order = await Order.create(orderData);
 
     // 4. Handle Cash on Delivery (COD)
     if (paymentMethod === 'COD') {
       console.log(`Order ${order._id} created with COD. Skipping Paymob.`);
 
-      // Clear user's cart
-      await Cart.findOneAndUpdate({ user: req.user._id }, { items: [] });
+      // Clear cart
+      await Cart.findOneAndUpdate(cartQuery, { items: [] });
 
       // Send notification to Admin
       const populatedOrder = await Order.findById(order._id).populate('user');
@@ -78,24 +87,26 @@ export const checkout = async (req, res) => {
 
     console.log(`Paymob Order registered: ${paymobOrderId}. Generating payment key for Wallet integration...`);
 
+    const billingData = {
+      first_name: req.user?.name?.split(' ')[0] || 'Guest',
+      last_name: req.user?.name?.split(' ')[1] || (req.user ? '' : (req.guestId.substring(0, 5))),
+      email: req.user?.email || 'guest@example.com',
+      phone_number: phone,
+      apartment: 'N/A',
+      floor: 'N/A',
+      street: shippingAddress.address || 'N/A',
+      building: 'N/A',
+      shipping_method: 'PKG',
+      postal_code: shippingAddress.postalCode || '12345',
+      city: shippingAddress.city || 'Cairo',
+      country: shippingAddress.country || 'Egypt',
+      state: 'N/A'
+    };
+
     const paymentKey = await paymobService.generatePaymentKey(token, {
       amountCents,
       orderId: paymobOrderId,
-      billingData: {
-        first_name: req.user.name.split(' ')[0] || 'N/A',
-        last_name: req.user.name.split(' ')[1] || 'Guest',
-        email: req.user.email,
-        phone_number: phone,
-        apartment: 'N/A',
-        floor: 'N/A',
-        street: shippingAddress.address || 'N/A',
-        building: 'N/A',
-        shipping_method: 'PKG',
-        postal_code: shippingAddress.postalCode || '12345',
-        city: shippingAddress.city || 'Cairo',
-        country: shippingAddress.country || 'Egypt',
-        state: 'N/A'
-      },
+      billingData,
       integrationId: process.env.PAYMOB_WALLET_INTEGRATION_ID
     });
 
@@ -150,8 +161,9 @@ export const handleWebhook = async (req, res) => {
       order.paymobTransactionId = transaction.id;
       await order.save();
 
-      // Clear the user's cart
-      await Cart.findOneAndUpdate({ user: order.user }, { items: [] });
+      // Clear the cart (User or Guest)
+      const cartQuery = order.user ? { user: order.user } : { guestId: order.guestId };
+      await Cart.findOneAndUpdate(cartQuery, { items: [] });
 
       console.log(`✅ Order ${order._id} marked as PAID`);
 

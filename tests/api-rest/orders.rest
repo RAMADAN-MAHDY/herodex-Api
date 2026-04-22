@@ -1,0 +1,17 @@
+@baseUrl = https://herodex-api.vercel.app/api
+@contentType = application/json
+@adminToken = {{loginAdmin.response.body.data.token}}
+@userToken = {{loginUser.response.body.data.token}}
+
+### Prerequisites: Run auth.rest first to get tokens
+
+### 1. Delete All Orders (Positive Case - Admin)
+DELETE {{baseUrl}}/orders
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZGJmZDY3ZjU4OTljZTc4YmZlNGJiOCIsImlhdCI6MTc3Njc4ODM4NCwiZXhwIjoxNzc5MzgwMzg0fQ.b-8W5phxYCiC8ReoQbWou89CSelReVm08NkKsJx9oVg
+
+### 2. Delete All Orders (Negative Case - Unauthorized)
+DELETE {{baseUrl}}/orders
+
+### 3. Delete All Orders (Negative Case - Forbidden - Normal User)
+DELETE {{baseUrl}}/orders
+Authorization: Bearer {{userToken}}

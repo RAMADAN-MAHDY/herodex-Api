@@ -4,8 +4,14 @@ const cartSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    unique: true
+    required: false,
+    unique: true,
+    sparse: true
+  },
+  guestId: {
+    type: String,
+    unique: true,
+    sparse: true
   },
   items: [
     {
