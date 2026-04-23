@@ -96,7 +96,7 @@ export const sendOrderNotification = async (order) => {
 🔔 *طلب جديد!*
 --------------------------
 🆔 *رقم الطلب:* \`${order._id}\`
-👤 *العميل:* ${order.user?.name || 'مستخدم غير معروف'}
+👤 *العميل:* ${order.user?.name || order.guestName || 'زائر'}
 📞 *رقم الهاتف:* \`${order.shippingAddress.phone}\`
 💰 *المبلغ الإجمالي:* ${order.totalPrice} EGP
 💳 *طريقة الدفع:* ${order.paymentMethod === 'wallet' ? '📱 محفظة إلكترونية' : order.paymentMethod === 'COD' ? '💵 دفع عند الاستلام' : '💳 بطاقة بنكية'}

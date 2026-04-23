@@ -10,6 +10,10 @@ const orderSchema = new mongoose.Schema({
     type: String,
     sparse: true
   },
+  guestName: {
+    type: String,
+    required: false
+  },
   items: [
     {
       product: {

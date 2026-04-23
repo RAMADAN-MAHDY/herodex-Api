@@ -10,7 +10,7 @@ import { sendOrderNotification } from '../utils/telegram.service.js';
  */
 export const checkout = async (req, res) => {
   try {
-    const { shippingAddress, paymentMethod, walletNumber } = req.body;
+    const { shippingAddress, paymentMethod, walletNumber, guestName } = req.body;
     const { phone } = shippingAddress || {};
 
     if (!shippingAddress || !paymentMethod || !phone) {
@@ -54,6 +54,7 @@ export const checkout = async (req, res) => {
       orderData.user = req.user._id;
     } else {
       orderData.guestId = req.guestId;
+      orderData.guestName = guestName;
     }
 
     const order = await Order.create(orderData);
@@ -85,11 +86,12 @@ export const checkout = async (req, res) => {
     order.paymobOrderId = paymobOrderId;
     await order.save();
 
-    console.log(`Paymob Order registered: ${paymobOrderId}. Generating payment key for Wallet integration...`);
+    const fullName = req.user?.name || guestName || 'Guest';
+    const nameParts = fullName.trim().split(' ');
 
     const billingData = {
-      first_name: req.user?.name?.split(' ')[0] || 'Guest',
-      last_name: req.user?.name?.split(' ')[1] || (req.user ? '' : (req.guestId.substring(0, 5))),
+      first_name: nameParts[0],
+      last_name: nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Customer',
       email: req.user?.email || 'guest@example.com',
       phone_number: phone,
       apartment: 'N/A',
@@ -281,7 +283,8 @@ export const getAllOrders = async (req, res) => {
       query = {
         $or: [
           { user: { $in: userIds } },
-          { 'shippingAddress.phone': { $regex: search, $options: 'i' } }
+          { 'shippingAddress.phone': { $regex: search, $options: 'i' } },
+          { guestName: { $regex: search, $options: 'i' } }
         ]
       };
     }
