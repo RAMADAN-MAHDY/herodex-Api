@@ -28,8 +28,8 @@ export const uploadImage = (req, res, next) => {
 
       // Check for maximum limit of 7 images
       const count = await Image.countDocuments();
-      if (count >= 7) {
-        return errorResponse(res, 'Maximum limit of 7 images reached. Please delete some images before adding new ones.', [], 400);
+      if (count >= 20) {
+        return errorResponse(res, 'Maximum limit of 20 images reached. Please delete some images before adding new ones.', [], 400);
       }
 
       let aspectRatio = null;
