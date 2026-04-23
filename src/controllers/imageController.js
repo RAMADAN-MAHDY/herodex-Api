@@ -1,4 +1,3 @@
-import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
 import Image from '../models/Image.js';
@@ -7,35 +6,7 @@ import upload from '../middlewares/uploadMiddleware.js'; // Import the existing 
 import { uploadToImageBB } from '../utils/imageBB.js'; // Import ImageBB service
 import axios from 'axios';
 
-// Helper function to process and upload image to ImageBB
-const processAndUploadImage = async (buffer, type, aspectRatio) => {
-  let processedBuffer = buffer;
-  let width, height;
 
-  if (type === 'mobile') {
-    width = 720;
-    height = 1280;
-    processedBuffer = await sharp(buffer)
-      .resize(width, height, {
-        fit: sharp.fit.cover,
-        position: sharp.strategy.entropy
-      })
-      .toBuffer();
-  } else if (type === 'laptop') {
-    width = 2560;
-    height = 1080;
-    processedBuffer = await sharp(buffer)
-      .resize(width, height, {
-        fit: sharp.fit.cover,
-        position: sharp.strategy.entropy
-      })
-      .toBuffer();
-  }
-  // For 'general' type, no specific resizing, just upload original buffer
-
-  const { url, deleteUrl } = await uploadToImageBB(processedBuffer);
-  return { url, deleteUrl };
-};
 
 /**
  * @desc Upload and process an image
@@ -54,41 +25,39 @@ export const uploadImage = (req, res, next) => {
 
     try {
       const { type } = req.body;
-      // No longer requiring 'name' field
-      // No longer associating with 'user' field
+
+      // Check for maximum limit of 7 images
+      const count = await Image.countDocuments();
+      if (count >= 7) {
+        return errorResponse(res, 'Maximum limit of 7 images reached. Please delete some images before adding new ones.', [], 400);
+      }
 
       let aspectRatio = null;
       if (type === 'mobile') aspectRatio = '16:9';
       if (type === 'laptop') aspectRatio = '21:9';
 
-      // Upload original image to ImageBB
-      const { url: originalImageUrl, deleteUrl: originalDeleteUrl } = await uploadToImageBB(req.file.buffer);
+      // Upload image to ImageBB (single upload)
+      const { url: imageUrl, deleteUrl: imageDeleteUrl } = await uploadToImageBB(req.file.buffer);
 
-      let mobileImageUrl = null;
-      let mobileDeleteUrl = null;
-      let laptopImageUrl = null;
-      let laptopDeleteUrl = null;
+      let mobilePath = null;
+      let laptopPath = null;
 
       if (type === 'mobile') {
-        const { url, deleteUrl } = await processAndUploadImage(req.file.buffer, 'mobile', aspectRatio);
-        mobileImageUrl = url;
-        mobileDeleteUrl = deleteUrl;
+        mobilePath = imageUrl;
       } else if (type === 'laptop') {
-        const { url, deleteUrl } = await processAndUploadImage(req.file.buffer, 'laptop', aspectRatio);
-        laptopImageUrl = url;
-        laptopDeleteUrl = deleteUrl;
+        laptopPath = imageUrl;
       }
 
       const image = await Image.create({
-        originalPath: originalImageUrl,
-        mobilePath: mobileImageUrl,
-        laptopPath: laptopImageUrl,
+        originalPath: imageUrl,
+        mobilePath: mobilePath,
+        laptopPath: laptopPath,
         type,
         aspectRatio,
-        deleteUrl: originalDeleteUrl // Store the delete URL for the original image
+        deleteUrl: imageDeleteUrl
       });
 
-      return successResponse(res, 'Image uploaded and processed successfully', image, 201);
+      return successResponse(res, 'Image uploaded successfully', image, 201);
     } catch (error) {
       console.error('Image upload/processing error:', error);
       return errorResponse(res, 'Failed to upload or process image', [error.message], 500);
@@ -103,7 +72,11 @@ export const uploadImage = (req, res, next) => {
  */
 export const getImages = async (req, res) => {
   try {
-    const images = await Image.find({});
+    const images = await Image.find({})
+      .sort({ createdAt: -1 }) // Sort by newest first
+      .select('originalPath type aspectRatio deleteUrl')
+      .lean();
+
     return successResponse(res, 'Images fetched successfully', images);
   } catch (error) {
     console.error('Error fetching images:', error);

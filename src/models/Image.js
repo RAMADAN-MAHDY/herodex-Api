@@ -29,4 +29,6 @@ const imageSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
+imageSchema.index({ createdAt: -1 });
+
 export default mongoose.model('Image', imageSchema);
