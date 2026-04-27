@@ -8,6 +8,7 @@ import { sendOrderNotification } from '../utils/telegram.service.js';
 /**
  * Initiate a checkout process
  */
+
 export const checkout = async (req, res) => {
   try {
     const { shippingAddress, paymentMethod, walletNumber, guestName } = req.body;

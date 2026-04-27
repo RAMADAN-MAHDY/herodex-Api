@@ -91,7 +91,16 @@ class PaymobService {
         },
         payment_token: paymentKey,
       });
-      return response.data.iframe_redirection_url;
+      
+      // Paymob wallet payments typically return 'redirect_url'
+      const redirectUrl = response.data.redirect_url || response.data.iframe_redirection_url;
+      
+      if (!redirectUrl) {
+        console.error('No redirect URL found in Paymob response:', response.data);
+        throw new Error('لم يتم العثور على رابط الدفع من مزود الخدمة');
+      }
+
+      return redirectUrl;
     } catch (error) {
       console.error('Paymob Wallet Pay Error:', error.response?.data || error.message);
       throw new Error('Failed to get Paymob wallet redirect URL');
