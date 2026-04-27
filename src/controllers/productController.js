@@ -24,6 +24,21 @@ export const getProducts = async (req, res) => {
   });
 };
 
+export const getProductById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id).populate('category', 'name').lean();
+
+    if (!product) {
+      return errorResponse(res, 'Product not found', [], 404);
+    }
+
+    return successResponse(res, 'Product fetched', product);
+  } catch (err) {
+    return errorResponse(res, err.message, [], 500);
+  }
+};
+
 export const createProduct = async (req, res) => {
   const { error } = productSchema.validate(req.body, { abortEarly: false });
   if (error) {
