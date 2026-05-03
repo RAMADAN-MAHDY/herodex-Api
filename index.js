@@ -58,11 +58,11 @@ app.use(helmet({
 // cors
 const corsOptions = {
   origin: [
-    // "http://localhost:3000", 
+    "http://localhost:3000", 
     "https://herodex-navy.vercel.app", 
-    // "https://herodex-git-test-kharjclean-8981s-projects.vercel.app",
+    "https://herodex-git-test-kharjclean-8981s-projects.vercel.app",
     "https://www.herodex-pharma.com",
-    "https://herodex-api.vercel.app"  // ✅ أضف الـ API URL
+    "https://herodex-api.vercel.app",  // ✅ أضف الـ API URL
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
