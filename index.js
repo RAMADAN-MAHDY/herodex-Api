@@ -62,7 +62,8 @@ const corsOptions = {
     "https://herodex-navy.vercel.app", 
     "https://herodex-git-test-kharjclean-8981s-projects.vercel.app",
     "https://www.herodex-pharma.com",
-    "https://herodex-api.vercel.app",  // ✅ أضف الـ API URL
+    "https://herodex-api.vercel.app",
+    "https://herodex-navy.vercel.app/product",
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
