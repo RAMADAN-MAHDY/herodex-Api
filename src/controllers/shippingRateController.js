@@ -1,19 +1,17 @@
-'use strict';
-
-const ShippingRate = require('../models/ShippingRate');
+import ShippingRate from '../models/ShippingRate.js';
 
 // Controller function to update the shipping rate
-exports.updateShippingRate = async (req, res) => {
+export const updateShippingRate = async (req, res) => {
     // Fetch shipping rate by ID
     const shippingRate = await ShippingRate.findById(req.params.id);
     if (!shippingRate) {
         return res.status(404).json({ message: 'Shipping rate not found' });
     }
-    
+
     // Update shipping rate fields
-    shippingRate.name = req.body.name;
-    shippingRate.price = req.body.price;
-    // ...other fields...
+    shippingRate.governorate = req.body.governorate;
+    shippingRate.cost = req.body.cost;
+    shippingRate.time = req.body.time;
 
     try {
         const updatedRate = await shippingRate.save();
