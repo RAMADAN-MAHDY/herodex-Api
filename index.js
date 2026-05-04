@@ -52,7 +52,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Explicitly handle preflight for all routes
+app.options('/(.*)', cors(corsOptions)); // Explicitly handle preflight for all routes
 
 // 2. Static Files
 app.use('/uploads', express.static('uploads'));
