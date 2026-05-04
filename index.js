@@ -19,17 +19,45 @@ import imageRoutes from './src/routes/imageRoutes.js';
 import shippingRateRoutes from './src/routes/shippingRateRoutes.js';
 import { initTelegramBot } from './src/utils/telegram.service.js';
 
-dotenv.config();
-
 
 const app = express();
 
 app.set('trust proxy', 1);
 
-// Serve static files from the 'uploads' directory
+// 1. CORS Middleware (Must be before other middlewares to handle preflight)
+const corsOptions = {
+  origin: [
+    "http://localhost:3000", 
+    "https://herodex-navy.vercel.app", 
+    "https://herodex-git-test-kharjclean-8981s-projects.vercel.app",
+    "https://www.herodex-pharma.com",
+    "https://herodex-api.vercel.app",
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'x-guest-id', 
+    'X-CSRF-Token', 
+    'X-Requested-With', 
+    'Accept', 
+    'Accept-Version', 
+    'Content-Length', 
+    'Content-MD5', 
+    'Date', 
+    'X-Api-Version'
+  ],
+  optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Explicitly handle preflight for all routes
+
+// 2. Static Files
 app.use('/uploads', express.static('uploads'));
 
-// Security Middleware
+// 3. Security Middleware
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -37,7 +65,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "https://i.ibb.co", "https://*.googleusercontent.com"],
-      connectSrc: ["'self'", "https://accounts.google.com", "https://oauth2.googleapis.com"],
+      connectSrc: ["'self'", "https://accounts.google.com", "https://oauth2.googleapis.com", "https://www.herodex-pharma.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
@@ -56,22 +84,6 @@ app.use(helmet({
   referrerPolicy: { policy: "no-referrer" },
 }));
 
-// cors
-const corsOptions = {
-  origin: [
-    "http://localhost:3000", 
-    "https://herodex-navy.vercel.app", 
-    "https://herodex-git-test-kharjclean-8981s-projects.vercel.app",
-    "https://www.herodex-pharma.com",
-    "https://herodex-api.vercel.app",
-    "https://herodex-navy.vercel.app/product",
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-guest-id'],
-};
-
-app.use(cors(corsOptions));
 app.use(express.json());
 
 // Routes
