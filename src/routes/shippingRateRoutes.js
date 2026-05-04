@@ -17,20 +17,22 @@ router.route('/')
   .post(protect, admin, createShippingRate)
   .get(protect, admin, getShippingRates);
 
-router.route('/seed')
-  .get(seedShippingRatesAdmin)
-  .post(seedShippingRatesAdmin);
+// router.route('/seed')
+//   .get(seedShippingRatesAdmin)
+//   .post(seedShippingRatesAdmin);
+
+router.route('/public')
+.get(getAllShippingRatesPublic);
+
+router.route('/public/:id')
+.get(getPublicShippingDetails);
+
 
 router.route('/:id')
   .get(protect, admin, getShippingRateById)
   .put(protect, admin, updateShippingRate)
   .delete(protect, admin, deleteShippingRate);
 
-router.route('/public/:id')
-  .get(getPublicShippingDetails);
-
-router.route('/public')
-  .get(getAllShippingRatesPublic);
 
 
 
