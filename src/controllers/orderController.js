@@ -86,7 +86,12 @@ export const checkout = async (req, res) => {
       const populatedOrder = await Order.findById(order._id).populate('user');
       sendOrderNotification(populatedOrder);
 
-      return successResponse(res, 'Order placed successfully (Cash on Delivery)', { orderId: order._id });
+      return successResponse(res, 'Order placed successfully (Cash on Delivery)', { 
+        orderId: order._id,
+        totalPrice: order.totalPrice,
+        shippingCost: order.shippingAddress.shippingCost,
+        deliveryTime: order.shippingAddress.deliveryTime
+      });
     }
 
     const amountCents = Math.round(finalTotalPrice * 100);
@@ -133,7 +138,13 @@ export const checkout = async (req, res) => {
     console.log('Payment key generated. Fetching Wallet redirect URL...');
     const paymentUrl = await paymobService.getWalletRedirectUrl(paymentKey, walletNumber);
 
-    return successResponse(res, 'Payment initialized', { orderId: order._id, paymentUrl });
+     return successResponse(res, 'Payment initialized', { 
+       orderId: order._id, 
+       paymentUrl,
+       totalPrice: order.totalPrice,
+       shippingCost: order.shippingAddress.shippingCost,
+       deliveryTime: order.shippingAddress.deliveryTime
+     });
 
   } catch (error) {
     console.error('Detailed Checkout Error:', error);

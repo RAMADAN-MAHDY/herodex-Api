@@ -1,80 +1,101 @@
-# تحديثات الـ API لتكامل الواجهة الأمامية (Frontend)
+# HeroDex API - دليل تكامل الشحن والطلبات (النسخة النهائية)
 
-توضح هذه الوثيقة التعديلات الأخيرة في الـ API، مع التركيز على البيانات التي يجب إرسالها واستقبالها من جهة الـ Frontend.
-
----
-
-## 1. تغييرات طلب إتمام الشراء (`POST /api/checkout`)
-
-تم تحديث كائن العنوان `shippingAddress` ليعتمد على معرف المحافظة (`governorateId`) لضمان دقة حساب التكاليف.
-
-### **الحقول المطلوبة في `shippingAddress`:**
-يجب على الـ Frontend إرسال البيانات التالية عند إنشاء طلب:
-
-```json
-{
-  "shippingAddress": {
-    "address": "شارع المعز",
-    "detailedAddress": "شقة 5، الدور الثالث", // اختياري
-    "city": "القاهرة",
-    "governorateId": "65e8a7b0c1d2e3f4a5b6c7d8", // هام: استخدم الـ ID الخاص بالمحافظة
-    "postalCode": "12345",
-    "country": "Egypt",
-    "phone": "010XXXXXXXX",
-    "email": "user@example.com" // اختياري
-  },
-  "paymentMethod": "COD", // أو "wallet", "card"
-  "guestName": "Ramadan Mahdy" // مطلوب في حالة عدم تسجيل الدخول
-}
-```
-
-### **ماذا يحدث في الخلفية؟**
-*   يتم استخدام `governorateId` لجلب **تكلفة الشحن** و **موعد التسليم** و **اسم المحافظة** من قاعدة البيانات.
-*   سيتم إضافة تكلفة الشحن إلى إجمالي الطلب تلقائياً.
+هذا هو الدليل المعتمد والوحيد لعملية الربط مع نظام الشحن والطلبات الجديد.
 
 ---
 
-## 2. نقاط النهاية الخاصة بأسعار الشحن (Shipping Rates)
+## 1. جلب قائمة المحافظات (Shipping Rates)
+يجب جلب هذه القائمة أولاً لعرض المحافظات للمستخدم والحصول على الـ `_id` الخاص بالمحافظة المختارة.
 
-يجب على الـ Frontend جلب قائمة المحافظات أولاً للحصول على الـ `_id` الخاص بكل محافظة.
-
-### **أ. جلب كل المحافظات (للحصول على الـ IDs)**
-*   **المسار:** `GET /api/shippingrates/public`
-*   **الاستجابة:**
+- **المسار:** `GET /api/shippingrates/public`
+- **الرد (Response):**
 ```json
 {
   "success": true,
   "data": [
     {
-      "_id": "65e8a7b0c1d2e3f4a5b6c7d8", // هذا هو المعرف الذي يجب إرساله في الـ checkout
+      "_id": "67c7a5266858e3881b212f71",
       "governorate": "القاهرة",
       "cost": 70,
       "time": "24 ل 48 ساعة"
-    },
-    {
-      "_id": "65e8a7b0c1d2e3f4a5b6c7d9",
-      "governorate": "الإسكندرية",
-      "cost": 80,
-      "time": "4 أيام عمل"
     }
   ]
 }
 ```
 
-### **ب. جلب تفاصيل شحن لمحافظة معينة بالـ ID**
-*   **المسار:** `GET /api/shippingrates/public/:id`
-*   **مثال:** `/api/shippingrates/public/65e8a7b0c1d2e3f4a5b6c7d8`
+---
+
+## 2. إتمام الطلب (Checkout)
+يتم إرسال بيانات الشحن وطريقة الدفع. **ملحوظة:** لا يتم إرسال المنتجات (items) لأن السيرفر يجلبها من السلة تلقائياً.
+
+- **المسار:** `POST /api/orders/checkout`
+- **شكل الـ Request Body (مطابق للـ Validator):**
+```json
+{
+  "shippingAddress": {
+    "address": "123 شارع النصر، الدور الرابع",
+    "detailedAddress": "بجوار مسجد النور", // اختياري
+    "city": "القاهرة",
+    "governorateId": "67c7a5266858e3881b212f71", // الـ ID المستلم من API الشحن
+    "postalCode": "12345",
+    "phone": "01012345678",
+    "email": "user@example.com" // اختياري
+  },
+  "paymentMethod": "COD", // الخيارات: COD, card, wallet
+  "walletNumber": "01012345678", // مطلوب فقط إذا كان الدفع wallet
+  "guestName": "Ramadan" // مطلوب فقط إذا كان المستخدم غير مسجل دخول
+}
+```
+
+- **شكل الـ Response (الرد الناجح):**
+```json
+{
+  "success": true,
+  "message": "Order placed successfully (Cash on Delivery)",
+  "data": {
+    "orderId": "65e8a8...",
+    "totalPrice": 1270, // السعر الإجمالي شامل الشحن
+    "shippingCost": 70, // تكلفة الشحن المحسوبة
+    "deliveryTime": "24 ل 48 ساعة",
+    "paymentUrl": "..." // يظهر فقط في حالة الدفع الإلكتروني
+  }
+}
+```
+
 
 ---
 
-## 3. لوحة التحكم (Admin Panel)
+## 3. لوحة التحكم - إدارة الشحن (Admin Dashboard)
 
-العمليات التالية متاحة للمسؤولين فقط على المسار `/api/shippingrates`:
-*   `GET /api/shippingrates`: جلب كل البيانات التفصيلية.
-*   `POST /api/shippingrates`: إضافة محافظة جديدة.
-*   `PUT /api/shippingrates/:id`: تعديل بيانات محافظة.
-*   `DELETE /api/shippingrates/:id`: حذف محافظة.
+هذه العمليات تتطلب صلاحيات المسؤول (`Admin Token`).
+
+### **أ. جلب كل بيانات الشحن (Admin List)**
+- **المسار:** `GET /api/shippingrates`
+- **الاستجابة:** ترجع قائمة كاملة بجميع المحافظات وتكاليفها.
+
+### **ب. إضافة محافظة جديدة (Add New Rate)**
+- **المسار:** `POST /api/shippingrates`
+- **الجسم (Request Body):**
+```json
+{
+  "governorate": "مطروح",
+  "cost": 130,
+  "time": "5 أيام عمل"
+}
+```
+
+### **ج. تعديل بيانات محافظة (Update Rate)**
+- **المسار:** `PUT /api/shippingrates/:id`
+- **الجسم (Request Body):** يمكنك إرسال حقل واحد فقط أو كل الحقول.
+```json
+{
+  "cost": 140
+}
+```
+
+### **د. حذف محافظة (Delete Rate)**
+- **المسار:** `DELETE /api/shippingrates/:id`
 
 ---
 
-**ملاحظة:** يفضل دائماً جلب قائمة المحافظات من المسار العام (`/public`) في بداية عملية الدفع لضمان حصول المستخدم على أحدث الأسعار والـ IDs الصحيحة.
+**ملاحظة عامة:** جميع عمليات المسؤول تتطلب إرسال الـ `Authorization: Bearer <ADMIN_TOKEN>` في الـ Headers.

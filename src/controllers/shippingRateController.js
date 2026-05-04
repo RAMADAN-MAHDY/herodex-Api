@@ -1,4 +1,6 @@
 import ShippingRate from '../models/ShippingRate.js';
+import { successResponse, errorResponse } from '../utils/responseFormatter.js';
+import { shippingRateSchema, updateShippingRateSchema } from '../validators/shippingRateValidator.js';
 
 // @desc    Get all shipping rates (Admin)
 // @route   GET /api/shippingrates
@@ -6,9 +8,9 @@ import ShippingRate from '../models/ShippingRate.js';
 export const getShippingRates = async (req, res) => {
   try {
     const shippingRates = await ShippingRate.find({}).sort({ governorate: 1 }).lean();
-    res.json(shippingRates);
+    return successResponse(res, 'Shipping rates fetched', shippingRates);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching shipping rates', error });
+    return errorResponse(res, 'Error fetching shipping rates', error.message);
   }
 };
 
@@ -18,9 +20,9 @@ export const getShippingRates = async (req, res) => {
 export const getAllShippingRatesPublic = async (req, res) => {
   try {
     const shippingRates = await ShippingRate.find({}).sort({ governorate: 1 }).lean();
-    res.json(shippingRates);
+    return successResponse(res, 'Shipping rates fetched', shippingRates);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching shipping rates', error });
+    return errorResponse(res, 'Error fetching shipping rates', error.message);
   }
 };
 
@@ -31,12 +33,12 @@ export const getShippingRateById = async (req, res) => {
   try {
     const shippingRate = await ShippingRate.findById(req.params.id).lean();
     if (shippingRate) {
-      res.json(shippingRate);
+      return successResponse(res, 'Shipping rate fetched', shippingRate);
     } else {
-      res.status(404).json({ message: 'Shipping rate not found' });
+      return errorResponse(res, 'Shipping rate not found', [], 404);
     }
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching shipping rate', error });
+    return errorResponse(res, 'Error fetching shipping rate', error.message);
   }
 };
 
@@ -47,12 +49,12 @@ export const getPublicShippingDetails = async (req, res) => {
   try {
     const shippingRate = await ShippingRate.findById(req.params.id).lean();
     if (shippingRate) {
-      res.json(shippingRate);
+      return successResponse(res, 'Shipping rate details fetched', shippingRate);
     } else {
-      res.status(404).json({ message: 'Shipping rate not found' });
+      return errorResponse(res, 'Shipping rate not found', [], 404);
     }
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching shipping rate', error });
+    return errorResponse(res, 'Error fetching shipping rate', error.message);
   }
 };
 
@@ -61,12 +63,18 @@ export const getPublicShippingDetails = async (req, res) => {
 // @access  Private/Admin
 export const createShippingRate = async (req, res) => {
   try {
+    const { error } = shippingRateSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+      const errorMessages = error.details.map((detail) => detail.message);
+      return errorResponse(res, 'Validation Error', errorMessages, 400);
+    }
+
     const { governorate, cost, time } = req.body;
 
     const rateExists = await ShippingRate.findOne({ governorate });
 
     if (rateExists) {
-      return res.status(400).json({ message: 'Shipping rate for this governorate already exists' });
+      return errorResponse(res, 'Shipping rate for this governorate already exists', [], 400);
     }
 
     const shippingRate = await ShippingRate.create({
@@ -75,9 +83,9 @@ export const createShippingRate = async (req, res) => {
       time,
     });
 
-    res.status(201).json(shippingRate);
+    return successResponse(res, 'Shipping rate created', shippingRate, 201);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating shipping rate', error: error.message });
+    return errorResponse(res, 'Error creating shipping rate', error.message);
   }
 };
 
@@ -86,6 +94,12 @@ export const createShippingRate = async (req, res) => {
 // @access  Private/Admin
 export const updateShippingRate = async (req, res) => {
   try {
+    const { error } = updateShippingRateSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+      const errorMessages = error.details.map((detail) => detail.message);
+      return errorResponse(res, 'Validation Error', errorMessages, 400);
+    }
+
     const { governorate, cost, time } = req.body;
 
     const shippingRate = await ShippingRate.findById(req.params.id);
@@ -96,12 +110,12 @@ export const updateShippingRate = async (req, res) => {
       shippingRate.time = time || shippingRate.time;
 
       const updatedRate = await shippingRate.save();
-      res.json(updatedRate);
+      return successResponse(res, 'Shipping rate updated', updatedRate);
     } else {
-      res.status(404).json({ message: 'Shipping rate not found' });
+      return errorResponse(res, 'Shipping rate not found', [], 404);
     }
   } catch (error) {
-    res.status(500).json({ message: 'Error updating shipping rate', error: error.message });
+    return errorResponse(res, 'Error updating shipping rate', error.message);
   }
 };
 
@@ -114,12 +128,12 @@ export const deleteShippingRate = async (req, res) => {
 
     if (shippingRate) {
       await shippingRate.deleteOne();
-      res.json({ message: 'Shipping rate removed' });
+      return successResponse(res, 'Shipping rate removed');
     } else {
-      res.status(404).json({ message: 'Shipping rate not found' });
+      return errorResponse(res, 'Shipping rate not found', [], 404);
     }
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting shipping rate', error: error.message });
+    return errorResponse(res, 'Error deleting shipping rate', error.message);
   }
 };
 
@@ -169,8 +183,8 @@ export const seedShippingRatesAdmin = async (req, res) => {
     await ShippingRate.deleteMany({});
     const createdRates = await ShippingRate.insertMany(shippingRatesData);
 
-    res.status(201).json({ message: 'Shipping rates seeded successfully', count: createdRates.length });
+    return successResponse(res, 'Shipping rates seeded successfully', { count: createdRates.length });
   } catch (error) {
-    res.status(500).json({ message: 'Error seeding shipping rates', error: error.message });
+    return errorResponse(res, 'Error seeding shipping rates', error.message);
   }
 };
