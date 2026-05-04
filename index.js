@@ -16,6 +16,7 @@ import statsRoutes from './src/routes/statsRoutes.js';
 import cartRoutes from './src/routes/cartRoutes.js';
 import orderRoutes from './src/routes/orderRoutes.js';
 import imageRoutes from './src/routes/imageRoutes.js';
+import shippingRateRoutes from './src/routes/shippingRateRoutes.js';
 import { initTelegramBot } from './src/utils/telegram.service.js';
 
 dotenv.config();
@@ -75,6 +76,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/images', imageRoutes);
+app.use('/api/shippingrates', shippingRateRoutes);
 
 // Fix: Initialize Bot BEFORE error middlewares
 if (process.env.NODE_ENV !== 'test') {

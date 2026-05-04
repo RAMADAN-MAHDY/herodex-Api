@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import paymobService from '../utils/paymob.service.js';
 import { successResponse, errorResponse } from '../utils/responseFormatter.js';
 import { sendOrderNotification } from '../utils/telegram.service.js';
+import { getShippingDetails } from '../utils/shippingService.js';
 
 /**
  * Initiate a checkout process
@@ -12,10 +13,10 @@ import { sendOrderNotification } from '../utils/telegram.service.js';
 export const checkout = async (req, res) => {
   try {
     const { shippingAddress, paymentMethod, walletNumber, guestName } = req.body;
-    const { phone } = shippingAddress || {};
+    const { phone, governorateId, email, detailedAddress } = shippingAddress || {};
 
-    if (!shippingAddress || !paymentMethod || !phone) {
-      return errorResponse(res, 'Shipping address, phone, and payment method are required', [], 400);
+    if (!shippingAddress || !paymentMethod || !phone || !governorateId) {
+      return errorResponse(res, 'Shipping address, phone, governorate ID, and payment method are required', [], 400);
     }
 
     if (paymentMethod === 'wallet' && !walletNumber) {
@@ -40,13 +41,27 @@ export const checkout = async (req, res) => {
     }));
 
     const totalPrice = items.reduce((total, item) => total + (item.price * item.quantity), 0);
-    const amountCents = Math.round(totalPrice * 100);
+    
+    const { governorate: governorateName, cost: shippingCost, time: deliveryTime } = await getShippingDetails(governorateId);
+
+    if (!governorateName) {
+      return errorResponse(res, 'Invalid governorate ID provided', [], 400);
+    }
+
+    const finalTotalPrice = totalPrice + shippingCost;
 
     // 3. Create local Order (Pending)
     const orderData = {
       items,
-      shippingAddress,
-      totalPrice,
+      shippingAddress: {
+        ...shippingAddress,
+        governorate: governorateName, // Store the actual governorate name
+        detailedAddress,
+        email: email || req.user?.email,
+        shippingCost,
+        deliveryTime,
+      },
+      totalPrice: finalTotalPrice,
       paymentMethod,
       paymentStatus: 'pending'
     };
@@ -74,6 +89,8 @@ export const checkout = async (req, res) => {
       return successResponse(res, 'Order placed successfully (Cash on Delivery)', { orderId: order._id });
     }
 
+    const amountCents = Math.round(finalTotalPrice * 100);
+
     // 5. Paymob Integration
     console.log(`Starting Paymob checkout for order ${order._id} via ${paymentMethod}`);
     const token = await paymobService.authenticate();
@@ -93,9 +110,9 @@ export const checkout = async (req, res) => {
     const billingData = {
       first_name: nameParts[0],
       last_name: nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Customer',
-      email: req.user?.email || 'guest@example.com',
+      email: shippingAddress.email || req.user?.email || 'guest@example.com',
       phone_number: phone,
-      apartment: 'N/A',
+      apartment: shippingAddress.detailedAddress || 'N/A',
       floor: 'N/A',
       street: shippingAddress.address || 'N/A',
       building: 'N/A',
@@ -103,7 +120,7 @@ export const checkout = async (req, res) => {
       postal_code: shippingAddress.postalCode || '12345',
       city: shippingAddress.city || 'Cairo',
       country: shippingAddress.country || 'Egypt',
-      state: 'N/A'
+      state: governorateName || 'N/A'
     };
 
     const paymentKey = await paymobService.generatePaymentKey(token, {
