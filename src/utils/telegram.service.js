@@ -98,9 +98,12 @@ export const sendOrderNotification = async (order) => {
 🆔 *رقم الطلب:* \`${order._id}\`
 👤 *العميل:* ${order.user?.name || order.guestName || 'زائر'}
 📞 *رقم الهاتف:* \`${order.shippingAddress.phone}\`
-💰 *المبلغ الإجمالي:* ${order.totalPrice} EGP
-💳 *طريقة الدفع:* ${order.paymentMethod === 'wallet' ? '📱 محفظة إلكترونية' : order.paymentMethod === 'COD' ? '💵 دفع عند الاستلام' : '💳 بطاقة بنكية'}
 📍 *العنوان:* ${order.shippingAddress.address}, ${order.shippingAddress.city}
+🚚 *المحافظة:* ${order.shippingAddress.governorate}
+💰 *تكلفة الشحن:* ${order.shippingAddress.shippingCost} EGP
+⏱️ *وقت التوصيل:* ${order.shippingAddress.deliveryTime}
+💰 *المبلغ الإجمالي:* ${order.totalPrice} EGP (شامل الشحن)
+💳 *طريقة الدفع:* ${order.paymentMethod === 'wallet' ? '📱 محفظة إلكترونية' : order.paymentMethod === 'COD' ? '💵 دفع عند الاستلام' : '💳 بطاقة بنكية'}
 
 📦 *المنتجات:*
 ${order.items.map(item => `- ${item.name} (${item.quantity} x ${item.price} EGP)`).join('\n')}
