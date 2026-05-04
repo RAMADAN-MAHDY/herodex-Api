@@ -2,12 +2,19 @@ import ShippingRate from '../models/ShippingRate.js';
 import { successResponse, errorResponse } from '../utils/responseFormatter.js';
 import { getShippingDetails } from '../utils/shippingService.js';
 import { seedShippingRates } from '../../seedShippingRates.js';
+import { shippingRateSchema, updateShippingRateSchema } from '../validators/shippingRateValidator.js';
 
 // @desc    Create a new shipping rate
 // @route   POST /api/shippingrates
 // @access  Admin
 export const createShippingRate = async (req, res) => {
   try {
+    const { error } = shippingRateSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+      const errorMessages = error.details.map((detail) => detail.message);
+      return errorResponse(res, 'Validation Error', errorMessages, 400);
+    }
+
     const { governorate, cost, time } = req.body;
 
     const shippingRateExists = await ShippingRate.findOne({ governorate }).lean();
@@ -65,6 +72,12 @@ export const getShippingRateById = async (req, res) => {
 // @access  Admin
 export const updateShippingRate = async (req, res) => {
   try {
+    const { error } = updateShippingRateSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+      const errorMessages = error.details.map((detail) => detail.message);
+      return errorResponse(res, 'Validation Error', errorMessages, 400);
+    }
+
     const { governorate, cost, time } = req.body;
 
     // Add lean() to findById query for read-only operations

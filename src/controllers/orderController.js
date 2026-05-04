@@ -6,22 +6,22 @@ import { successResponse, errorResponse } from '../utils/responseFormatter.js';
 import { sendOrderNotification } from '../utils/telegram.service.js';
 import { getShippingDetails } from '../utils/shippingService.js';
 
+import { checkoutSchema } from '../validators/orderValidator.js';
+
 /**
  * Initiate a checkout process
  */
 
 export const checkout = async (req, res) => {
   try {
+    const { error } = checkoutSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+      const errorMessages = error.details.map((detail) => detail.message);
+      return errorResponse(res, 'Validation Error', errorMessages, 400);
+    }
+
     const { shippingAddress, paymentMethod, walletNumber, guestName } = req.body;
-    const { phone, governorateId, email, detailedAddress } = shippingAddress || {};
-
-    if (!shippingAddress || !paymentMethod || !phone || !governorateId) {
-      return errorResponse(res, 'Shipping address, phone, governorate ID, and payment method are required', [], 400);
-    }
-
-    if (paymentMethod === 'wallet' && !walletNumber) {
-      return errorResponse(res, 'Wallet number is required for wallet payments', [], 400);
-    }
+    const { phone, governorateId, email, detailedAddress } = shippingAddress;
 
     // 1. Get Cart (User or Guest)
     const cartQuery = req.user ? { user: req.user._id } : { guestId: req.guestId };
