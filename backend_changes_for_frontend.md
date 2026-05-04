@@ -396,8 +396,11 @@ router.route('/:id')
   .put(protect, admin, updateShippingRate)   // مسؤول: تحديث سعر حسب المعرف
   .delete(protect, admin, deleteShippingRate); // مسؤول: حذف سعر حسب المعرف
 
-router.route('/public/:governorate')
-  .get(getPublicShippingDetails); // عام: الحصول على تفاصيل الشحن حسب المحافظة
+router.route('/public/:id')
+  .get(getPublicShippingDetails); // عام: الحصول على تفاصيل الشحن حسب المعرف
+
+router.route('/public')
+  .get(getAllShippingRatesPublic); // عام: الحصول على جميع أسعار الشحن العامة
 
 router.route('/seed')
   .post(protect, admin, seedShippingRatesAdmin); // مسؤول: تغذية الأسعار الأولية
@@ -410,14 +413,5 @@ router.route('/seed')
 ---
 
 ## ملاحظة هامة للتغذية الأولية للبيانات:
-
-لإدخال أسعار الشحن المحددة مسبقًا في قاعدة البيانات الخاصة بك في البداية، لديك خياران:
-
-1.  **تشغيل السكريبت مباشرة (موصى به للتطوير/الإعداد الأولي):**
-    ```bash
-    node d:\my-projects\E-liprarys\backend\seedShippingRates.js
-    ```
-2.  **استخدام نقطة نهاية API الجديدة (للمستخدمين المسؤولين):**
-    أرسل طلب `POST` إلى `/api/shippingrates/seed` (تأكد من أنك مصادق كمسؤول). سيؤدي هذا إلى مسح الأسعار الموجودة وإعادة تغذيتها.
 
 هذا يختتم التوثيق التفصيلي لتغييرات الواجهة الخلفية.

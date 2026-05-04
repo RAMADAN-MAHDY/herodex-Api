@@ -1,8 +1,6 @@
-import dotenv from 'dotenv';
+import 'dotenv/config';
 import mongoose from 'mongoose';
 import ShippingRate from './src/models/ShippingRate.js';
-
-dotenv.config();
 
 const shippingRatesData = [
   { governorate: 'القاهرة', cost: 70, time: '24 ل 48 ساعة' },
@@ -83,12 +81,4 @@ export const seedShippingRates = async () => {
   }
 };
 
-if (import.meta.url === new URL(import.meta.url).href) {
-  seedShippingRates().then(result => {
-    if (result.success) {
-      process.exit(0);
-    } else {
-      process.exit(1);
-    }
-  });
-}
+
