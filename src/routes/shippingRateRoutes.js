@@ -29,6 +29,6 @@ router.route('/public')
   .get(getAllShippingRatesPublic);
 
 router.route('/seed')
-  .post(seedShippingRatesAdmin);
+  .get(seedShippingRatesAdmin);
 
 export default router;

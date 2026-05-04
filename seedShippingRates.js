@@ -83,7 +83,7 @@ export const seedShippingRates = async () => {
   }
 };
 
-if (require.main === module) {
+if (import.meta.url === new URL(import.meta.url).href) {
   seedShippingRates().then(result => {
     if (result.success) {
       process.exit(0);
