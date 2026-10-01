@@ -22,6 +22,7 @@ export const productSchema = Joi.object({
       'number.max': 'Price cannot exceed {#limit}',
       'any.required': 'Price is required'
     }),
+  originalPrice: Joi.number().min(0.01).max(1000000).allow(null, ''),
   description: Joi.string()
     .min(10)
     .max(1000)
@@ -38,11 +39,19 @@ export const productSchema = Joi.object({
       'string.pattern.base': 'Invalid Category ID format',
       'any.required': 'Category ID is required'
     })
+  }).custom((product, helpers) => {
+    if (typeof product.originalPrice === 'number' && product.originalPrice <= product.price) {
+      return helpers.error('product.originalPrice');
+    }
+    return product;
+  }).messages({
+    'product.originalPrice': 'Original price must be greater than current price'
 });
 
 export const updateProductSchema = Joi.object({
   name: Joi.string().min(2).max(100),
   price: Joi.number().min(0.01).max(1000000),
+  originalPrice: Joi.number().min(0.01).max(1000000).allow(null, ''),
   description: Joi.string().min(10).max(1000),
   category: Joi.string().regex(/^[0-9a-fA-F]{24}$/)
 }).min(1).messages({

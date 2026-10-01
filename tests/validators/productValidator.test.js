@@ -13,6 +13,16 @@ describe('Product Validator', () => {
     expect(error).toBeUndefined();
   });
 
+  test('should validate a product with an optional original price', () => {
+    const { error } = productSchema.validate({ ...validProduct, originalPrice: 25 });
+    expect(error).toBeUndefined();
+  });
+
+  test('should reject an original price that is not greater than the current price', () => {
+    const { error } = productSchema.validate({ ...validProduct, originalPrice: 19.99 });
+    expect(error.details[0].message).toBe('Original price must be greater than current price');
+  });
+
   test('should fail if product name is too short', () => {
     const product = { ...validProduct, name: 'S' };
     const { error } = productSchema.validate(product);
@@ -35,6 +45,11 @@ describe('Product Validator', () => {
     test('should validate a valid partial update', () => {
       const update = { price: 25.99 };
       const { error } = updateProductSchema.validate(update);
+      expect(error).toBeUndefined();
+    });
+
+    test('should allow clearing the original price', () => {
+      const { error } = updateProductSchema.validate({ originalPrice: null });
       expect(error).toBeUndefined();
     });
 

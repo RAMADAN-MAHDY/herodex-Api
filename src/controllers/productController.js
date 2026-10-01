@@ -40,7 +40,7 @@ export const getProductById = async (req, res) => {
 };
 
 export const createProduct = async (req, res) => {
-  const { error } = productSchema.validate(req.body, { abortEarly: false });
+  const { error, value } = productSchema.validate(req.body, { abortEarly: false });
   if (error) {
     const errorMessages = error.details.map((detail) => detail.message);
     return errorResponse(res, 'Validation Error', errorMessages, 400);
@@ -50,15 +50,17 @@ export const createProduct = async (req, res) => {
 
   try {
     const { url: imageUrl, deleteUrl } = await uploadToImageBB(req.file.buffer);
-    const { name, price, description, category } = req.body;
-    const product = await Product.create({
+    const { name, price, originalPrice, description, category } = value;
+    const productData = {
       name,
       price,
       description,
       image: imageUrl,
       deleteUrl,
       category
-    });
+    };
+    if (typeof originalPrice === 'number') productData.originalPrice = originalPrice;
+    const product = await Product.create(productData);
     return successResponse(res, 'Product created', product, 201);
   } catch (err) {
     return errorResponse(res, err.message, [], 500);
@@ -71,10 +73,20 @@ export const updateProduct = async (req, res) => {
 
   if (!product) return errorResponse(res, 'Product not found', [], 404);
 
-  const { error } = updateProductSchema.validate(req.body, { abortEarly: false });
+  const { error, value } = updateProductSchema.validate(req.body, { abortEarly: false });
   if (error) {
     const errorMessages = error.details.map((detail) => detail.message);
     return errorResponse(res, 'Validation Error', errorMessages, 400);
+  }
+
+  const nextPrice = value.price ?? product.price;
+  const nextOriginalPrice = Object.hasOwn(value, 'originalPrice')
+    ? value.originalPrice === null || value.originalPrice === ''
+      ? undefined
+      : value.originalPrice
+    : product.originalPrice;
+  if (typeof nextOriginalPrice === 'number' && nextOriginalPrice <= nextPrice) {
+    return errorResponse(res, 'Original price must be greater than current price', [], 400);
   }
 
   try {
@@ -97,6 +109,7 @@ export const updateProduct = async (req, res) => {
 
     product.name = req.body.name || product.name;
     product.price = req.body.price || product.price;
+    if (Object.hasOwn(req.body, 'originalPrice')) product.originalPrice = nextOriginalPrice;
     product.description = req.body.description || product.description;
     product.image = imageUrl;
     product.deleteUrl = deleteUrl;

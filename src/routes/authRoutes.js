@@ -7,9 +7,7 @@ import {loginUser,registerUser,
 } from '../controllers/authController.js';
 
 import { protect } from '../middlewares/authMiddleware.js';
-import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
 
 const router = express.Router();
 
